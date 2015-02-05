@@ -1,5 +1,5 @@
-LDA $1d
-LDX $48
-LDY $f1
-LDA $48
-LDA $2252
+	lda $1d
+	ldx $48
+	ldy $f1
+	lda $48
+	lda $2252
