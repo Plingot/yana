@@ -1,6 +1,7 @@
 %{
 #include <cstdio>
 #include <iostream>
+#include <sstream>
 using namespace std;
 
 #include "parser.h"  // to get the token types that we return
@@ -11,11 +12,14 @@ extern "C" int yyparse();
 extern "C" FILE *yyin;
 extern int line_num;
 
+std::string hex(unsigned int c);
+void loghex(const char *message, unsigned int c);
 void yyerror(const char *s);
 %}
 
 %union {
-  int ival;
+  unsigned char byte;
+  unsigned short word;
 }
 
 // define the constant-string tokens:
@@ -24,7 +28,8 @@ void yyerror(const char *s);
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
 // by convention), and associate each with a field of the union:
-%token <ival> INT
+%token <byte> T_BYTE
+%token <word> T_WORD
 
 %%
 instructions:
@@ -33,9 +38,12 @@ instructions:
   ;
 
 instruction:
-  INSTR_LDA INT ENDLS { cout << "Load Accumulator with Memory: " << $2 << endl; }
-  | INSTR_LDX INT ENDLS { cout << "Load Index X with Memory: " << $2 << endl; }
-  | INSTR_LDY INT ENDLS { cout << "Load Index Y with Memory: " << $2 << endl; }
+  INSTR_LDA T_BYTE ENDLS { loghex("Load Accumulator with Memory: ", $2); }
+  | INSTR_LDA T_WORD ENDLS { loghex("Load Accumulator with Memory: ", $2); }
+  | INSTR_LDX T_BYTE ENDLS { loghex("Load Index X with Memory: ", $2); }
+  | INSTR_LDX T_WORD ENDLS { loghex("Load Index X with Memory: ", $2); }
+  | INSTR_LDY T_BYTE ENDLS { loghex("Load Index Y with Memory: ", $2); }
+  | INSTR_LDY T_WORD ENDLS { loghex("Load Index Y with Memory: ", $2); }
   | UNKNOWN ENDLS { yyerror("Unknown instruction"); }
   ;
 
@@ -61,6 +69,16 @@ int main() {
   do {
     yyparse();
   } while (!feof(yyin));
+}
+
+std::string hex(unsigned int c) {
+    std::ostringstream stm;
+    stm << '$' << std::hex << c;
+    return stm.str() ;
+}
+
+void loghex(const char *message, unsigned int c) {
+  cout << message << hex(c) << endl;
 }
 
 void yyerror(const char *s) {

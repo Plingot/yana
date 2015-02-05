@@ -1,8 +1,5 @@
-LDA 12
-LDX 48
-LDY 165
-LDA 48
-x
-y
-b
-LDA 12
+LDA $1d
+LDX $48
+LDY $f1
+LDA $48
+LDA $2252
