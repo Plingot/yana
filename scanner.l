@@ -1,18 +1,142 @@
-%option noyywrap
 %{
 #include <iostream>
 #include "parser.h"
+#include "opcodes.h"
 using namespace std;
 #define YY_DECL extern "C" int yylex()
 int line_num = 1;
+
+inline void opCC01(unsigned char byte) {
+  yylval.opcode.type = opcode_CC01;
+  yylval.opcode.base = byte;
+};
+
+inline void opCC10(unsigned char byte) {
+  yylval.opcode.type = opcode_CC10;
+  yylval.opcode.base = byte;
+};
+
+inline void opCC00(unsigned char byte) {
+  yylval.opcode.type = opcode_CC00;
+  yylval.opcode.base = byte;
+};
+
+inline void opBRA(unsigned char byte) {
+  yylval.opcode.type = opcode_BRANCH;
+  yylval.opcode.base = byte;
+};
+
+inline void opIS(unsigned char byte) {
+  yylval.opcode.type = opcode_IS;
+  yylval.opcode.base = byte;
+};
+
+inline void opREM(unsigned char byte) {
+  yylval.opcode.type = opcode_REM;
+  yylval.opcode.base = byte;
+};
+
 %}
+
+%option case-insensitive noyywrap batch
+%x COMMENT
+%x DEBUG_IGNORE
+
+NAME [a-zA-Z_][a-zA-Z0-9_]*
+
 %%
+<COMMENT>\n            { ++line_num; BEGIN(INITIAL); }
+<COMMENT>.             ;
+\;                     { BEGIN(COMMENT); }
+<DEBUG_IGNORE>\n       { ++line_num; BEGIN(INITIAL); }
+<DEBUG_IGNORE>.        ;
+^#                     { BEGIN(DEBUG_IGNORE); }
+^\.                    { BEGIN(DEBUG_IGNORE); }
 [ \t]                  ;
-lda                    { return INSTR_LDA; }
-ldx                    { return INSTR_LDX; }
-ldy                    { return INSTR_LDY; }
+
+
+  /* aaabbbcc opcodes - cc = 01 */
+ORA                    { opCC01(0); return T_INSTR_CC01; } /* 000 ORA */
+AND                    { opCC01(1); return T_INSTR_CC01; } /* 001 AND */
+EOR                    { opCC01(2); return T_INSTR_CC01; } /* 010 EOR */
+ADC                    { opCC01(3); return T_INSTR_CC01; } /* 011 ADC */
+STA                    { opCC01(4); return T_INSTR_CC01; } /* 100 STA */
+LDA                    { opCC01(5); return T_INSTR_CC01; } /* 101 LDA */
+CMP                    { opCC01(6); return T_INSTR_CC01; } /* 110 CMP */
+SBC                    { opCC01(7); return T_INSTR_CC01; } /* 111 SBC */
+
+
+  /* aaabbbcc opcodes - cc = 10 */
+ASL                    { opCC10(0); return T_INSTR_CC10; } /* 000 ASL */
+ROL                    { opCC10(1); return T_INSTR_CC10; } /* 001 ROL */
+LSR                    { opCC10(2); return T_INSTR_CC10; } /* 010 LSR */
+ROR                    { opCC10(3); return T_INSTR_CC10; } /* 011 ROR */
+STX                    { opCC10(4); return T_INSTR_CC10; } /* 100 STX */
+LDX                    { opCC10(5); return T_INSTR_CC10; } /* 101 LDX */
+DEC                    { opCC10(6); return T_INSTR_CC10; } /* 110 DEC */
+INC                    { opCC10(7); return T_INSTR_CC10; } /* 111 INC */
+
+
+  /* aaabbbcc opcodes - cc = 00 */
+BIT                    { opCC00(1); return T_INSTR_CC00; } /* 001 BIT */
+JMP                    { opCC00(2); return T_INSTR_CC00; } /* 010 JMP */
+  /* 011 JMP (abs) */
+STY                    { opCC00(4); return T_INSTR_CC00; } /* 100 STY */
+LDY                    { opCC00(5); return T_INSTR_CC00; } /* 101 LDY */
+CPY                    { opCC00(6); return T_INSTR_CC00; } /* 110 CPY */
+CPX                    { opCC00(7); return T_INSTR_CC00; } /* 111 CPX */
+
+
+  /* conditional branch instructions - xxy10000 */
+  /*
+    xx  flag
+    00  negative
+    01  overflow
+    10  carry
+    11  zero
+   */
+BPL                    { opBRA(0); return T_INSTR_BRA; }
+BMI                    { opBRA(1); return T_INSTR_BRA; }
+BVC                    { opBRA(2); return T_INSTR_BRA; }
+BVS                    { opBRA(3); return T_INSTR_BRA; }
+BCC                    { opBRA(4); return T_INSTR_BRA; }
+BCS                    { opBRA(5); return T_INSTR_BRA; }
+BNE                    { opBRA(6); return T_INSTR_BRA; }
+BEQ                    { opBRA(7); return T_INSTR_BRA; }
+
+
+  /* interrupt and subroutine instructions */
+BRK                    { opIS(0x00); return T_INSTR_IS; }
+JSR                    { opIS(0x20); return T_INSTR_IS; }
+RTI                    { opIS(0x40); return T_INSTR_IS; }
+RTS                    { opIS(0x60); return T_INSTR_IS; }
+
+  /* remaining single-byte instructions */
+PHP                    { opREM(0x08); return T_INSTR_REM; }
+PLP                    { opREM(0x28); return T_INSTR_REM; }
+PHA                    { opREM(0x48); return T_INSTR_REM; }
+PLA                    { opREM(0x68); return T_INSTR_REM; }
+DEY                    { opREM(0x88); return T_INSTR_REM; }
+TAY                    { opREM(0xa8); return T_INSTR_REM; }
+INY                    { opREM(0xc8); return T_INSTR_REM; }
+INX                    { opREM(0xe8); return T_INSTR_REM; }
+CLC                    { opREM(0x18); return T_INSTR_REM; }
+SEC                    { opREM(0x38); return T_INSTR_REM; }
+CLI                    { opREM(0x58); return T_INSTR_REM; }
+SEI                    { opREM(0x78); return T_INSTR_REM; }
+TYA                    { opREM(0x98); return T_INSTR_REM; }
+CLV                    { opREM(0xb8); return T_INSTR_REM; }
+CLD                    { opREM(0xd8); return T_INSTR_REM; }
+SED                    { opREM(0xf8); return T_INSTR_REM; }
+TXA                    { opREM(0x8a); return T_INSTR_REM; }
+TXS                    { opREM(0x9a); return T_INSTR_REM; }
+TAX                    { opREM(0xaa); return T_INSTR_REM; }
+TSX                    { opREM(0xba); return T_INSTR_REM; }
+DEX                    { opREM(0xca); return T_INSTR_REM; }
+NOP                    { opREM(0xea); return T_INSTR_REM; }
+
+[a-zA-Z0-9_\-]+:       ;
 \$[a-fA-F0-9]{2}       { /*Byte hex value */ yylval.byte = strtol(yytext + 1, 0, 16); return T_BYTE; } ;
 \$[a-fA-F0-9]{4}       { /*Word hex value */ yylval.word = strtol(yytext + 1, 0, 16); return T_WORD; } ;
-\n                     { ++line_num; return ENDL; }
-.                      { return UNKNOWN; }
+\n                     { ++line_num; }
 %%

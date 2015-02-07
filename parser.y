@@ -5,6 +5,7 @@
 using namespace std;
 
 #include "parser.h"  // to get the token types that we return
+#include "opcodes.h"
 
 // stuff from flex that bison needs to know about:
 extern "C" int yylex();
@@ -13,23 +14,32 @@ extern "C" FILE *yyin;
 extern int line_num;
 
 std::string hex(unsigned int c);
-void loghex(const char *message, unsigned int c);
+void loginstr(unsigned int c);
+void loginstr(const char *s);
 void yyerror(const char *s);
+
 %}
 
 %union {
   unsigned char byte;
   unsigned short word;
+
+  struct opcode {
+    unsigned char type;
+    unsigned char base;
+  } opcode;
 }
 
-// define the constant-string tokens:
-%token INSTR_LDA INSTR_LDX INSTR_LDY
-%token ENDL UNKNOWN
+%token UNKNOWN
 
-// define the "terminal symbol" token types I'm going to use (in CAPS
-// by convention), and associate each with a field of the union:
 %token <byte> T_BYTE
 %token <word> T_WORD
+%token <opcode> T_INSTR_CC01
+%token <opcode> T_INSTR_CC10
+%token <opcode> T_INSTR_CC00
+%token <opcode> T_INSTR_BRA
+%token <opcode> T_INSTR_IS
+%token <opcode> T_INSTR_REM
 
 %%
 instructions:
@@ -38,28 +48,31 @@ instructions:
   ;
 
 instruction:
-  INSTR_LDA T_BYTE ENDLS { loghex("Load Accumulator with Memory: ", $2); }
-  | INSTR_LDA T_WORD ENDLS { loghex("Load Accumulator with Memory: ", $2); }
-  | INSTR_LDX T_BYTE ENDLS { loghex("Load Index X with Memory: ", $2); }
-  | INSTR_LDX T_WORD ENDLS { loghex("Load Index X with Memory: ", $2); }
-  | INSTR_LDY T_BYTE ENDLS { loghex("Load Index Y with Memory: ", $2); }
-  | INSTR_LDY T_WORD ENDLS { loghex("Load Index Y with Memory: ", $2); }
-  | UNKNOWN ENDLS { yyerror("Unknown instruction"); }
+  T_INSTR T_BYTE { loginstr($2); }
+  | T_INSTR T_WORD { loginstr($2); }
+  | T_INSTR { loginstr("no value instr."); }
+  | UNKNOWN { yyerror("Unknown instruction"); }
   ;
 
-ENDLS:
-  ENDLS ENDL
-  | ENDL
+T_INSTR:
+  T_INSTR_CC01
+  | T_INSTR_CC10
+  | T_INSTR_CC00
+  | T_INSTR_BRA
+  | T_INSTR_IS
+  | T_INSTR_REM
   ;
 
 %%
 
 int main() {
+  const char *fileName = "metroid.asm";
+
   // open a file handle to a particular file:
-  FILE *myfile = fopen("test.yana", "r");
+  FILE *myfile = fopen(fileName, "r");
   // make sure it's valid:
   if (!myfile) {
-    cout << "I can't open test.yana file!" << endl;
+    cout << "I can't open " << fileName << " file!" << endl;
     return -1;
   }
   // set flex to read from it instead of defaulting to STDIN:
@@ -77,8 +90,12 @@ std::string hex(unsigned int c) {
     return stm.str() ;
 }
 
-void loghex(const char *message, unsigned int c) {
-  cout << message << hex(c) << endl;
+void loginstr(unsigned int c) {
+  cout << "(" << line_num << ")\t" << "Instr: " << hex(c) << endl;
+}
+
+void loginstr(const char *s) {
+  cout << "(" << line_num << ")\t" << "Instr: " << s << endl;
 }
 
 void yyerror(const char *s) {
