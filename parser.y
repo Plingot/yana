@@ -14,6 +14,7 @@ extern "C" FILE *yyin;
 extern int line_num;
 
 std::string hex(unsigned int c);
+void logoptype(const char *type);
 void loginstr(unsigned int c);
 void loginstr(const char *s);
 void yyerror(const char *s);
@@ -55,12 +56,12 @@ instruction:
   ;
 
 T_INSTR:
-  T_INSTR_CC01
-  | T_INSTR_CC10
-  | T_INSTR_CC00
-  | T_INSTR_BRA
-  | T_INSTR_IS
-  | T_INSTR_REM
+  T_INSTR_CC01   { logoptype("CC01"); }
+  | T_INSTR_CC10 { logoptype("CC10"); }
+  | T_INSTR_CC00 { logoptype("CC00"); }
+  | T_INSTR_BRA  { logoptype("BRANCH"); }
+  | T_INSTR_IS   { logoptype("IS"); }
+  | T_INSTR_REM  { logoptype("REM"); }
   ;
 
 %%
@@ -87,7 +88,11 @@ int main() {
 std::string hex(unsigned int c) {
     std::ostringstream stm;
     stm << '$' << std::hex << c;
-    return stm.str() ;
+    return stm.str();
+}
+
+void logoptype(const char *type) {
+  cout << "[" << type << "]\t";
 }
 
 void loginstr(unsigned int c) {
