@@ -9,32 +9,32 @@ int line_num = 1;
 inline void opCC01(unsigned char byte) {
   yylval.opcode.type = opcode_CC01;
   yylval.opcode.base = byte;
-};
+}
 
 inline void opCC10(unsigned char byte) {
   yylval.opcode.type = opcode_CC10;
   yylval.opcode.base = byte;
-};
+}
 
 inline void opCC00(unsigned char byte) {
   yylval.opcode.type = opcode_CC00;
   yylval.opcode.base = byte;
-};
+}
 
 inline void opBRA(unsigned char byte) {
   yylval.opcode.type = opcode_BRANCH;
   yylval.opcode.base = byte;
-};
+}
 
 inline void opIS(unsigned char byte) {
   yylval.opcode.type = opcode_IS;
   yylval.opcode.base = byte;
-};
+}
 
 inline void opREM(unsigned char byte) {
   yylval.opcode.type = opcode_REM;
   yylval.opcode.base = byte;
-};
+}
 
 %}
 
