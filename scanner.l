@@ -6,34 +6,43 @@ using namespace std;
 #define YY_DECL extern "C" int yylex()
 int line_num = 1;
 
-inline void opCC01(unsigned char byte) {
+inline unsigned char aaabbbcc_base(unsigned char type, unsigned char base) {
+  return (base << 5) | type;
+}
+
+inline unsigned char branch_base(unsigned char base) {
+  // xxy10000
+  return (base << 5) | 0x10;
+}
+
+inline void opCC01(unsigned char base) {
   yylval.opcode.type = opcode_CC01;
-  yylval.opcode.base = byte;
+  yylval.opcode.base = aaabbbcc_base(1, base);
 }
 
-inline void opCC10(unsigned char byte) {
+inline void opCC10(unsigned char base) {
   yylval.opcode.type = opcode_CC10;
-  yylval.opcode.base = byte;
+  yylval.opcode.base = aaabbbcc_base(2, base);
 }
 
-inline void opCC00(unsigned char byte) {
+inline void opCC00(unsigned char base) {
   yylval.opcode.type = opcode_CC00;
-  yylval.opcode.base = byte;
+  yylval.opcode.base = aaabbbcc_base(0, base);
 }
 
-inline void opBRA(unsigned char byte) {
+inline void opBRA(unsigned char base) {
   yylval.opcode.type = opcode_BRANCH;
-  yylval.opcode.base = byte;
+  yylval.opcode.base = base;
 }
 
-inline void opIS(unsigned char byte) {
+inline void opIS(unsigned char base) {
   yylval.opcode.type = opcode_IS;
-  yylval.opcode.base = byte;
+  yylval.opcode.base = base;
 }
 
-inline void opREM(unsigned char byte) {
+inline void opREM(unsigned char base) {
   yylval.opcode.type = opcode_REM;
-  yylval.opcode.base = byte;
+  yylval.opcode.base = base;
 }
 
 %}
