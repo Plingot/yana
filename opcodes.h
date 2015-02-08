@@ -21,7 +21,9 @@
 111 absolute,X
  */
 
-#define mode_IMM 0x02
+#define mode_ZERO 0x01
+#define mode_IMM  0x02
+#define mode_ABS  0x03
 
 unsigned char opcode_set_addr_mode(unsigned char group, unsigned char base, unsigned char addr_mode);
 unsigned char opcode_CC01_set_addr_mode(unsigned char base, unsigned char addr_mode);
