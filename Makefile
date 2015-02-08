@@ -1,9 +1,9 @@
-default: clean yana 
+default: clean yana
 
 clean:
-	rm -f yana parser.c parser.h scanner.cpp 
+	rm -f yana parser.c parser.h scanner.cpp
 
-yana: parser.c scanner.cpp
+yana: opcodes.c parser.c scanner.cpp
 	g++ -o $@ $^
 
 parser.c: parser.y

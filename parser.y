@@ -15,6 +15,7 @@ extern int line_num;
 
 std::string hex(unsigned int c);
 void logoptype(const char *type, unsigned char base);
+void logaddrmode(const char *mode);
 void loginstr(unsigned int c);
 void loginstr(const char *s);
 void yyerror(const char *s);
@@ -33,7 +34,9 @@ void yyerror(const char *s);
 
 %token UNKNOWN
 
+%token <byte> T_BYTE_IMM
 %token <byte> T_BYTE
+%token <word> T_WORD_IMM
 %token <word> T_WORD
 %token <opcode> T_INSTR_CC01
 %token <opcode> T_INSTR_CC10
@@ -42,6 +45,9 @@ void yyerror(const char *s);
 %token <opcode> T_INSTR_IS
 %token <opcode> T_INSTR_REM
 
+%type <byte> T_IMMEDIATE
+%type <opcode> T_INSTR
+
 %%
 instructions:
   instructions instruction
@@ -49,7 +55,12 @@ instructions:
   ;
 
 instruction:
-  T_INSTR T_BYTE { loginstr($2); }
+  T_INSTR T_IMMEDIATE {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
+    logoptype("IMM", $1.base);
+    loginstr($2);
+  }
+  | T_INSTR T_BYTE { loginstr($2); }
   | T_INSTR T_WORD { loginstr($2); }
   | T_INSTR { loginstr("no value instr."); }
   | UNKNOWN { yyerror("Unknown instruction"); }
@@ -62,6 +73,11 @@ T_INSTR:
   | T_INSTR_BRA  { logoptype("BRANCH", $1.base); }
   | T_INSTR_IS   { logoptype("IS",     $1.base); }
   | T_INSTR_REM  { logoptype("REM",    $1.base); }
+  ;
+
+T_IMMEDIATE:
+  T_BYTE_IMM
+  | T_WORD_IMM
   ;
 
 %%
@@ -93,6 +109,10 @@ std::string hex(unsigned int c) {
 
 void logoptype(const char *type, unsigned char base) {
   cout << "[" << type << ":\t" << hex(base) << "]\t";
+}
+
+void logaddrmode(const char *mode) {
+  cout << "[AM: " << mode << "]\t";
 }
 
 void loginstr(unsigned int c) {

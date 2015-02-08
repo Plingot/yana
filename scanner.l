@@ -145,7 +145,9 @@ DEX                    { opREM(0xca); return T_INSTR_REM; }
 NOP                    { opREM(0xea); return T_INSTR_REM; }
 
 [a-zA-Z0-9_\-]+:       ;
+#\$[a-fA-F0-9]{2}      { /*Byte hex value - immediate */ yylval.byte = strtol(yytext + 1, 0, 16); return T_BYTE_IMM; } ;
 \$[a-fA-F0-9]{2}       { /*Byte hex value */ yylval.byte = strtol(yytext + 1, 0, 16); return T_BYTE; } ;
+#\$[a-fA-F0-9]{4}      { /*Word hex value - immediate */ yylval.word = strtol(yytext + 1, 0, 16); return T_WORD_IMM; } ;
 \$[a-fA-F0-9]{4}       { /*Word hex value */ yylval.word = strtol(yytext + 1, 0, 16); return T_WORD; } ;
 \n                     { ++line_num; }
 %%
