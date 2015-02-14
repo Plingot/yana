@@ -14,6 +14,7 @@ extern "C" FILE *yyin;
 extern int line_num;
 
 std::string hex(unsigned int c);
+std::string dec(unsigned int c);
 void logoptype(const char *type, unsigned char base);
 void logaddrmode(const char *mode);
 void loginstr(unsigned int c);
@@ -32,6 +33,8 @@ void yyerror(const char *s);
   } opcode;
 }
 
+%token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
+%token T_BANK T_ORG
 %token UNKNOWN
 
 %token <byte> T_BYTE_IMM
@@ -49,6 +52,26 @@ void yyerror(const char *s);
 %type <opcode> T_INSTR
 
 %%
+program:
+  ines_header instructions
+  ;
+
+ines_header:
+  ines_entries
+  ;
+
+ines_entries:
+  ines_entries ines_entry
+  | ines_entry
+  ;
+
+ines_entry:
+  T_INES_PRG T_BYTE { cout << dec($2) << " program banks." << endl; }
+  | T_INES_CHR T_BYTE { cout << dec($2) << " chr banks." << endl; }
+  | T_INES_MIR T_BYTE { cout << dec($2) << " mirroring mode." << endl; }
+  | T_INES_MAP T_BYTE { cout << dec($2) << " mapper." << endl; }
+  ;
+
 instructions:
   instructions instruction
   | instruction
@@ -104,6 +127,12 @@ int main() {
 std::string hex(unsigned int c) {
     std::ostringstream stm;
     stm << '$' << std::hex << c;
+    return stm.str();
+}
+
+std::string dec(unsigned int c) {
+    std::ostringstream stm;
+    stm << std::dec << c;
     return stm.str();
 }
 
