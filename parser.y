@@ -87,7 +87,7 @@ bank_header:
   ;
 
 bank_no:
-  T_BANK T_BYTE { cout << "Starting bank " << $2 << endl; }
+  T_BANK T_BYTE { cout << "Starting bank " << dec($2) << endl; }
   ;
 
 org:
