@@ -53,7 +53,7 @@ void yyerror(const char *s);
 
 %%
 program:
-  ines_header instructions
+  ines_header banks
   ;
 
 ines_header:
@@ -70,6 +70,28 @@ ines_entry:
   | T_INES_CHR T_BYTE { cout << dec($2) << " chr banks." << endl; }
   | T_INES_MIR T_BYTE { cout << dec($2) << " mirroring mode." << endl; }
   | T_INES_MAP T_BYTE { cout << dec($2) << " mapper." << endl; }
+  ;
+
+banks:
+  banks bank
+  | bank
+  ;
+
+bank:
+  bank_header instructions
+  ;
+
+bank_header:
+  bank_no org
+  | org bank_no
+  ;
+
+bank_no:
+  T_BANK T_BYTE { cout << "Starting bank " << $2 << endl; }
+  ;
+
+org:
+  T_ORG T_WORD { cout << "Bank start: " << hex($2) << endl; }
   ;
 
 instructions:
