@@ -57,10 +57,6 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 <COMMENT>\n            { ++line_num; BEGIN(INITIAL); }
 <COMMENT>.             ;
 \;                     { BEGIN(COMMENT); }
-<DEBUG_IGNORE>\n       { ++line_num; BEGIN(INITIAL); }
-<DEBUG_IGNORE>.        ;
-^#                     { BEGIN(DEBUG_IGNORE); }
-^\.                    { BEGIN(DEBUG_IGNORE); }
 [ \t]                  ;
 
 
