@@ -83,7 +83,7 @@ T_IMMEDIATE:
 %%
 
 int main() {
-  const char *fileName = "metroid.asm";
+  const char *fileName = "test.asm";
 
   // open a file handle to a particular file:
   FILE *myfile = fopen(fileName, "r");
