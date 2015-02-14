@@ -59,6 +59,11 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 \;                     { BEGIN(COMMENT); }
 [ \t]                  ;
 
+  /* ines header */
+\.inesprg              { return T_INES_PRG; }
+\.ineschr              { return T_INES_CHR; }
+\.inesmir              { return T_INES_MIR; }
+\.inesmap              { return T_INES_MAP; }
 
   /* aaabbbcc opcodes - cc = 01 */
 ORA                    { opCC01(0); return T_INSTR_CC01; } /* 000 ORA */
