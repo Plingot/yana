@@ -65,6 +65,10 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 \.inesmir              { return T_INES_MIR; }
 \.inesmap              { return T_INES_MAP; }
 
+  /* bank handling */
+\.bank                 { return T_BANK; }
+\.org                  { return T_ORG; }
+
   /* aaabbbcc opcodes - cc = 01 */
 ORA                    { opCC01(0); return T_INSTR_CC01; } /* 000 ORA */
 AND                    { opCC01(1); return T_INSTR_CC01; } /* 001 AND */
