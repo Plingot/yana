@@ -2,7 +2,11 @@
 
 using namespace std;
 
-void SymbolTable::add(string name, symbol s) {
+void SymbolTable::add(string name, unsigned short address) {
+  symbol s;
+  s.name = name.c_str();
+  s.address = address;
+
   symbol_map[name] = s;
 }
 

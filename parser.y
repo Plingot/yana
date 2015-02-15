@@ -22,6 +22,7 @@ void logoptype(const char *type, unsigned char base);
 void logaddrmode(const char *mode);
 void loginstr(unsigned int c);
 void loginstr(const char *s);
+void logsymbol(symbol *s);
 void yyerror(const char *s);
 
 %}
@@ -36,6 +37,7 @@ void yyerror(const char *s);
   } opcode;
 
   char *c_str;
+  struct symbol *sym;
 }
 
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
@@ -54,6 +56,7 @@ void yyerror(const char *s);
 %token <opcode> T_INSTR_IS
 %token <opcode> T_INSTR_REM
 %token <c_str> T_LABEL
+%token <sym> T_SYMBOL
 
 %type <byte> T_IMMEDIATE
 %type <opcode> T_INSTR
@@ -109,11 +112,7 @@ instructions:
 instruction:
   T_LABEL {
     cout << "Found label [" << $1 << "]" << endl;
-
-    symbol newSymbol;
-    newSymbol.address = line_num; // Set to address when we start tracking that
-
-    localSymbols.add($1, newSymbol);
+    localSymbols.add($1, line_num); // Set to address when we start tracking that
   }
   | T_INSTR T_IMMEDIATE {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
@@ -122,6 +121,7 @@ instruction:
   }
   | T_INSTR T_BYTE { loginstr($2); }
   | T_INSTR T_WORD { loginstr($2); }
+  | T_INSTR T_SYMBOL { logsymbol($2); }
   | T_INSTR { loginstr("no value instr."); }
   | T_DATA
   | UNKNOWN { yyerror("Unknown instruction"); }
@@ -143,6 +143,7 @@ T_IMMEDIATE:
 
 T_DATA:
   T_DATA_WORD { cout << "word data: " << endl; } T_WORDS
+  | T_DATA_WORD T_SYMBOL { cout << "word data: " << endl; logsymbol($2); }
   | T_DATA_BYTE { cout << "byte data: " << endl; } T_BYTES
   ;
 
@@ -198,12 +199,23 @@ void logaddrmode(const char *mode) {
   cout << "[AM: " << mode << "]\t";
 }
 
+void logline() {
+  cout << "(" << line_num << ")\t";
+}
+
 void loginstr(unsigned int c) {
-  cout << "(" << line_num << ")\t" << "Instr: " << hex(c) << endl;
+  logline();
+  cout << "Instr: " << hex(c) << endl;
 }
 
 void loginstr(const char *s) {
-  cout << "(" << line_num << ")\t" << "Instr: " << s << endl;
+  logline();
+  cout << "Instr: " << s << endl;
+}
+
+void logsymbol(symbol *s) {
+  logline();
+  cout << "Symbol [" << s->name << "] = " << hex(s->address) << endl;
 }
 
 void yyerror(const char *s) {

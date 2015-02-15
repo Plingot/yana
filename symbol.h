@@ -13,13 +13,14 @@ struct less_string {
 };
 
 struct symbol {
+  const char *name;
   unsigned short address;
 };
 
 class SymbolTable {
 
 public:
-  void add(string name, symbol s);
+  void add(string name, unsigned short address);
   symbol *find(string name);
 
 private:

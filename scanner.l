@@ -191,5 +191,16 @@ NOP                    { opREM(0xea); return T_INSTR_REM; }
   return T_LABEL;
 };
 
+{NAME}                 {
+  /* Name reference */
+  symbol *s = localSymbols.find(yytext);
+  if (!s) {
+    // Undefined symbol
+    return UNKNOWN;
+  }
+  yylval.sym = s;
+  return T_SYMBOL;
+};
+
 \n                     { ++line_num; }
 %%
