@@ -1,5 +1,8 @@
 default: clean yana
 
+test: default
+	./yana
+
 clean:
 	rm -f yana parser.c parser.h scanner.cpp
 
