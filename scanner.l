@@ -69,6 +69,10 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 \.bank                 { return T_BANK; }
 \.org                  { return T_ORG; }
 
+  /* data bytes/words */
+\.dw                   { return T_DATA_WORD; }
+\.db                   { return T_DATA_BYTE; }
+
   /* aaabbbcc opcodes - cc = 01 */
 ORA                    { opCC01(0); return T_INSTR_CC01; } /* 000 ORA */
 AND                    { opCC01(1); return T_INSTR_CC01; } /* 001 AND */

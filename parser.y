@@ -35,6 +35,7 @@ void yyerror(const char *s);
 
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
 %token T_BANK T_ORG
+%token T_DATA_WORD T_DATA_BYTE
 %token UNKNOWN
 
 %token <byte> T_BYTE_IMM
@@ -108,6 +109,7 @@ instruction:
   | T_INSTR T_BYTE { loginstr($2); }
   | T_INSTR T_WORD { loginstr($2); }
   | T_INSTR { loginstr("no value instr."); }
+  | T_DATA
   | UNKNOWN { yyerror("Unknown instruction"); }
   ;
 
@@ -123,6 +125,22 @@ T_INSTR:
 T_IMMEDIATE:
   T_BYTE_IMM
   | T_WORD_IMM
+  ;
+
+T_DATA:
+  T_DATA_WORD { cout << "word data: " << endl; } T_WORDS
+  | T_DATA_BYTE { cout << "byte data: " << endl; } T_BYTES
+  ;
+
+T_WORDS:
+  T_WORDS T_WORD { cout << hex($2) << endl; }
+  | T_WORDS T_BYTE { cout << hex($2) << endl; }
+  | T_WORD { cout << hex($1) << endl; }
+  | T_BYTE { cout << hex($1) << endl; }
+
+T_BYTES:
+  T_BYTES T_BYTE { cout << hex($2) << endl; }
+  | T_BYTE { cout << hex($1) << endl; }
   ;
 
 %%
