@@ -2,9 +2,14 @@
 #include <iostream>
 #include "parser.h"
 #include "opcodes.h"
+#include "symbol.h"
+
 using namespace std;
+
 #define YY_DECL extern "C" int yylex()
+
 int line_num = 1;
+SymbolTable localSymbols;
 
 inline unsigned char aaabbbcc_base(unsigned char type, unsigned char base) {
   return (base << 5) | type;

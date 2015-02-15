@@ -2,16 +2,19 @@
 #include <cstdio>
 #include <iostream>
 #include <sstream>
+
 using namespace std;
 
 #include "parser.h"  // to get the token types that we return
 #include "opcodes.h"
+#include "symbol.h"
 
 // stuff from flex that bison needs to know about:
 extern "C" int yylex();
 extern "C" int yyparse();
 extern "C" FILE *yyin;
 extern int line_num;
+extern SymbolTable localSymbols;
 
 std::string hex(unsigned int c);
 std::string dec(unsigned int c);
@@ -104,7 +107,15 @@ instructions:
   ;
 
 instruction:
-  T_INSTR T_IMMEDIATE {
+  T_LABEL {
+    cout << "Found label [" << $1 << "]" << endl;
+
+    symbol newSymbol;
+    newSymbol.address = line_num; // Set to address when we start tracking that
+
+    localSymbols.add($1, newSymbol);
+  }
+  | T_INSTR T_IMMEDIATE {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
     logoptype("IMM", $1.base);
     loginstr($2);
