@@ -31,6 +31,8 @@ void yyerror(const char *s);
     unsigned char type;
     unsigned char base;
   } opcode;
+
+  char *c_str;
 }
 
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
@@ -48,6 +50,7 @@ void yyerror(const char *s);
 %token <opcode> T_INSTR_BRA
 %token <opcode> T_INSTR_IS
 %token <opcode> T_INSTR_REM
+%token <c_str> T_LABEL
 
 %type <byte> T_IMMEDIATE
 %type <opcode> T_INSTR
