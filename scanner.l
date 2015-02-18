@@ -1,8 +1,8 @@
 %{
 #include <iostream>
-#include "parser.h"
 #include "opcodes.h"
 #include "symbol.h"
+#include "parser.h"
 
 using namespace std;
 
@@ -193,12 +193,12 @@ NOP                    { opREM(0xea); return T_INSTR_REM; }
 
 {NAME}                 {
   /* Name reference */
-  symbol *s = localSymbols.find(yytext);
-  if (!s) {
+  symbol sym = localSymbols.find(yytext);
+  if (!sym.name) {
     // Undefined symbol
     return UNKNOWN;
   }
-  yylval.sym = s;
+  yylval.sym = sym;
   return T_SYMBOL;
 };
 

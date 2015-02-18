@@ -21,7 +21,7 @@ class SymbolTable {
 
 public:
   void add(string name, unsigned short address);
-  symbol *find(string name);
+  symbol find(string name);
 
 private:
   map<string, symbol, less_string> symbol_map;

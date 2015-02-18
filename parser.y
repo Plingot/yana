@@ -5,9 +5,9 @@
 
 using namespace std;
 
+#include "symbol.h"
 #include "parser.h"  // to get the token types that we return
 #include "opcodes.h"
-#include "symbol.h"
 #include "bank.h"
 
 // stuff from flex that bison needs to know about:
@@ -23,7 +23,7 @@ void logoptype(const char *type, unsigned char base);
 void logaddrmode(const char *mode);
 void loginstr(unsigned int c);
 void loginstr(const char *s);
-void logsymbol(symbol *s);
+void logsymbol(symbol s);
 void yyerror(const char *s);
 
 BankFactory bankFactory;
@@ -41,8 +41,8 @@ BankPtr currentBank;
     unsigned char base;
   } opcode;
 
-  char *c_str;
-  struct symbol *sym;
+  const char *c_str;
+  struct symbol sym;
 }
 
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
@@ -157,7 +157,7 @@ instruction:
     logsymbol($2);
 
     currentBank->addByte($1.base);
-    currentBank->addWord($2->address);
+    currentBank->addWord($2.address);
   }
   | T_INSTR { loginstr("no value instr."); }
   | T_DATA
@@ -176,7 +176,7 @@ T_INSTR:
 T_DATA:
   T_DATA_WORD { cout << "word data: " << endl; } T_WORDS
   | T_DATA_WORD T_SYMBOL {
-    currentBank->addWord($2->address);
+    currentBank->addWord($2.address);
 
     cout << "word data: " << endl;
     logsymbol($2);
@@ -274,9 +274,9 @@ void loginstr(const char *s) {
   cout << "Instr: " << s << endl;
 }
 
-void logsymbol(symbol *s) {
+void logsymbol(symbol s) {
   logline();
-  cout << "Symbol [" << s->name << "] = " << hex(s->address) << endl;
+  cout << "Symbol [" << s.name << "] = " << hex(s.address) << endl;
 }
 
 void yyerror(const char *s) {
