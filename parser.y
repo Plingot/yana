@@ -119,8 +119,9 @@ instructions:
 
 instruction:
   T_LABEL {
-    cout << "Found label [" << $1 << "]" << endl;
-    localSymbols.add($1, line_num); // Set to address when we start tracking that
+    unsigned short labelOffset = currentBank->currentOffset();
+    cout << "Found label [" << $1 << "] ref: " << hex(labelOffset) << endl;
+    localSymbols.add($1, labelOffset);
   }
   | T_INSTR T_BYTE_IMM {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
