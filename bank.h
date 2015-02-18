@@ -14,6 +14,7 @@ public:
 
   void addByte(unsigned char byte);
   void addWord(unsigned short word);
+  void addBinary(const char *fileName);
   void printData();
 
   virtual unsigned char operator[](unsigned short i) const = 0;

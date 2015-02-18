@@ -78,6 +78,9 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 \.dw                   { return T_DATA_WORD; }
 \.db                   { return T_DATA_BYTE; }
 
+  /* file includes */
+\.incbin               { return T_FILE_BINARY; }
+
   /* aaabbbcc opcodes - cc = 01 */
 ORA                    { opCC01(0); return T_INSTR_CC01; } /* 000 ORA */
 AND                    { opCC01(1); return T_INSTR_CC01; } /* 001 AND */
@@ -184,10 +187,18 @@ NOP                    { opREM(0xea); return T_INSTR_REM; }
   yylval.word = val;
   return T_WORD_IMM;
 };
+\"[^"]*\"              { //" <- syntax highlighting fix
+  /* String literal */
 
+  // Copy everything but the quotes
+  yylval.c_str = strndup(yytext + 1, strlen(yytext) - 2);
+  return T_STRING_LITERAL;
+};
 {NAME}:                {
   /* Named label definition */
-  yylval.c_str = strndup(yytext, strlen(yytext) - 1); // Copy everything but the colon
+
+  // Copy everything but the colon
+  yylval.c_str = strndup(yytext, strlen(yytext) - 1);
   return T_LABEL;
 };
 

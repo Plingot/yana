@@ -1,5 +1,8 @@
 #include <iostream>
 #include <sstream>
+#include <fstream>
+#include <vector>
+#include <iterator>
 #include "bank.h"
 
 using namespace std;
@@ -12,6 +15,17 @@ void Bank::addByte(unsigned char byte) {
 void Bank::addWord(unsigned short word) {
   addByte(word & 0xff);
   addByte(word >> 8);
+}
+
+void Bank::addBinary(const char *fileName) {
+  ifstream file(fileName, ios::binary);
+  istream_iterator<unsigned char> its(file), end;
+
+  for (; its != end; its++) {
+    addByte(*its);
+  }
+
+  file.close();
 }
 
 #define BYTES_PER_LINE 20

@@ -48,6 +48,7 @@ BankPtr currentBank;
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
+%token T_FILE_BINARY
 %token UNKNOWN
 
 %token <byte> T_BYTE_IMM
@@ -62,6 +63,7 @@ BankPtr currentBank;
 %token <opcode> T_INSTR_REM
 %token <c_str> T_LABEL
 %token <sym> T_SYMBOL
+%token <c_str> T_STRING_LITERAL
 
 %type <opcode> T_INSTR
 %type <word> org
@@ -161,6 +163,7 @@ instruction:
   }
   | T_INSTR { loginstr("no value instr."); }
   | T_DATA
+  | T_FILE
   | UNKNOWN { yyerror("Unknown instruction"); }
   ;
 
@@ -216,6 +219,14 @@ T_BYTES:
     currentBank->addByte($1);
 
     cout << hex($1) << endl;
+  }
+  ;
+
+T_FILE:
+  T_FILE_BINARY T_STRING_LITERAL {
+    currentBank->addBinary($2);
+
+    cout << "Adding binary: " << $2 << endl;
   }
   ;
 
