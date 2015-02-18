@@ -122,14 +122,42 @@ instruction:
     cout << "Found label [" << $1 << "]" << endl;
     localSymbols.add($1, line_num); // Set to address when we start tracking that
   }
-  | T_INSTR T_IMMEDIATE {
+  | T_INSTR T_BYTE_IMM {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
+
+    currentBank->addByte($1.base);
+    currentBank->addByte($2);
+
     logoptype("IMM", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_BYTE { loginstr($2); }
-  | T_INSTR T_WORD { loginstr($2); }
-  | T_INSTR T_SYMBOL { logsymbol($2); }
+  | T_INSTR T_WORD_IMM {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
+
+    currentBank->addByte($1.base);
+    currentBank->addWord($2);
+
+    logoptype("IMM", $1.base);
+    loginstr($2);
+  }
+  | T_INSTR T_BYTE {
+    currentBank->addByte($1.base);
+    currentBank->addByte($2);
+
+    loginstr($2);
+  }
+  | T_INSTR T_WORD {
+    currentBank->addByte($1.base);
+    currentBank->addWord($2);
+
+    loginstr($2);
+  }
+  | T_INSTR T_SYMBOL {
+    logsymbol($2);
+
+    currentBank->addByte($1.base);
+    currentBank->addWord($2->address);
+  }
   | T_INSTR { loginstr("no value instr."); }
   | T_DATA
   | UNKNOWN { yyerror("Unknown instruction"); }
@@ -144,26 +172,50 @@ T_INSTR:
   | T_INSTR_REM  { logoptype("REM",    $1.base); }
   ;
 
-T_IMMEDIATE:
-  T_BYTE_IMM
-  | T_WORD_IMM
-  ;
-
 T_DATA:
   T_DATA_WORD { cout << "word data: " << endl; } T_WORDS
-  | T_DATA_WORD T_SYMBOL { cout << "word data: " << endl; logsymbol($2); }
+  | T_DATA_WORD T_SYMBOL {
+    currentBank->addWord($2->address);
+
+    cout << "word data: " << endl;
+    logsymbol($2);
+  }
   | T_DATA_BYTE { cout << "byte data: " << endl; } T_BYTES
   ;
 
 T_WORDS:
-  T_WORDS T_WORD { cout << hex($2) << endl; }
-  | T_WORDS T_BYTE { cout << hex($2) << endl; }
-  | T_WORD { cout << hex($1) << endl; }
-  | T_BYTE { cout << hex($1) << endl; }
+  T_WORDS T_WORD {
+    currentBank->addWord($2);
+
+    cout << hex($2) << endl;
+  }
+  | T_WORDS T_BYTE {
+    currentBank->addWord($2);
+
+    cout << hex($2) << endl;
+  }
+  | T_WORD {
+    currentBank->addWord($1);
+
+    cout << hex($1) << endl;
+  }
+  | T_BYTE {
+    currentBank->addWord($1);
+
+    cout << hex($1) << endl;
+  }
 
 T_BYTES:
-  T_BYTES T_BYTE { cout << hex($2) << endl; }
-  | T_BYTE { cout << hex($1) << endl; }
+  T_BYTES T_BYTE {
+    currentBank->addByte($2);
+
+    cout << hex($2) << endl;
+  }
+  | T_BYTE {
+    currentBank->addByte($1);
+
+    cout << hex($1) << endl;
+  }
   ;
 
 %%
