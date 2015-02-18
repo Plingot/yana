@@ -8,6 +8,7 @@ using namespace std;
 #include "parser.h"  // to get the token types that we return
 #include "opcodes.h"
 #include "symbol.h"
+#include "bank.h"
 
 // stuff from flex that bison needs to know about:
 extern "C" int yylex();
@@ -24,6 +25,10 @@ void loginstr(unsigned int c);
 void loginstr(const char *s);
 void logsymbol(symbol *s);
 void yyerror(const char *s);
+
+BankFactory bankFactory;
+typedef unique_ptr<Bank> BankPtr;
+BankPtr currentBank;
 
 %}
 
@@ -58,8 +63,8 @@ void yyerror(const char *s);
 %token <c_str> T_LABEL
 %token <sym> T_SYMBOL
 
-%type <byte> T_IMMEDIATE
 %type <opcode> T_INSTR
+%type <word> org
 
 %%
 program:
@@ -88,12 +93,12 @@ banks:
   ;
 
 bank:
-  bank_header instructions
+  bank_header instructions { currentBank->printData(); }
   ;
 
 bank_header:
-  bank_no org
-  | org bank_no
+  bank_no org { currentBank = bankFactory.createBank(PRG, $2); }
+  | org bank_no { currentBank = bankFactory.createBank(PRG, $1); }
   ;
 
 bank_no:
@@ -101,7 +106,10 @@ bank_no:
   ;
 
 org:
-  T_ORG T_WORD { cout << "Bank start: " << hex($2) << endl; }
+  T_ORG T_WORD {
+    cout << "Bank start: " << hex($2) << endl;
+    $$ = $2;
+  }
   ;
 
 instructions:
