@@ -16,8 +16,8 @@ extern "C" FILE *yyin;
 extern int line_num;
 extern SymbolTable localSymbols;
 
-std::string hex(unsigned int c);
-std::string dec(unsigned int c);
+string hex(unsigned int c);
+string dec(unsigned int c);
 void logoptype(const char *type, unsigned char base);
 void logaddrmode(const char *mode);
 void loginstr(unsigned int c);
@@ -179,16 +179,16 @@ int main() {
   } while (!feof(yyin));
 }
 
-std::string hex(unsigned int c) {
-    std::ostringstream stm;
-    stm << '$' << std::hex << c;
-    return stm.str();
+string hex(unsigned int c) {
+  ostringstream stm;
+  stm << '$' << hex << c;
+  return stm.str();
 }
 
-std::string dec(unsigned int c) {
-    std::ostringstream stm;
-    stm << std::dec << c;
-    return stm.str();
+string dec(unsigned int c) {
+  ostringstream stm;
+  stm << dec << c;
+  return stm.str();
 }
 
 void logoptype(const char *type, unsigned char base) {
