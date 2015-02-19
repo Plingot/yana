@@ -37,7 +37,7 @@ inline void opCC00(unsigned char base) {
 
 inline void opBRA(unsigned char base) {
   yylval.opcode.type = opcode_BRANCH;
-  yylval.opcode.base = base;
+  yylval.opcode.base = branch_base(base);
 }
 
 inline void opIS(unsigned char base) {
