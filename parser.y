@@ -144,6 +144,7 @@ instruction:
     loginstr($2);
   }
   | T_INSTR T_BYTE {
+    // Check if we have a branch instruction first
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO);
 
     currentBank->addByte($1.base);
