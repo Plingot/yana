@@ -6,6 +6,7 @@
 using namespace std;
 
 #include "symbol.h"
+#include "ines_header.h"
 #include "parser.h"  // to get the token types that we return
 #include "opcodes.h"
 #include "bank.h"
@@ -29,6 +30,7 @@ void yyerror(const char *s);
 BankFactory bankFactory;
 typedef unique_ptr<Bank> BankPtr;
 BankPtr currentBank;
+InesHeader inesHeader;
 
 %}
 
@@ -72,7 +74,7 @@ BankPtr currentBank;
 
 %%
 program:
-  ines_header banks
+  ines_header { inesHeader.printData(); } banks
   ;
 
 ines_header:
@@ -85,10 +87,26 @@ ines_entries:
   ;
 
 ines_entry:
-  T_INES_PRG T_BYTE { cout << dec($2) << " program banks." << endl; }
-  | T_INES_CHR T_BYTE { cout << dec($2) << " chr banks." << endl; }
-  | T_INES_MIR T_BYTE { cout << dec($2) << " mirroring mode." << endl; }
-  | T_INES_MAP T_BYTE { cout << dec($2) << " mapper." << endl; }
+  T_INES_PRG T_BYTE {
+    inesHeader.setPRGRomSize($2);
+
+    cout << dec($2) << " program banks." << endl;
+  }
+  | T_INES_CHR T_BYTE {
+    inesHeader.setCHRRomSize($2);
+
+    cout << dec($2) << " chr banks." << endl;
+  }
+  | T_INES_MIR T_BYTE {
+    // TODO: Figure out how nesasm handles
+
+    cout << dec($2) << " mirroring mode." << endl;
+  }
+  | T_INES_MAP T_BYTE {
+    inesHeader.setMapper($2);
+
+    cout << dec($2) << " mapper." << endl;
+  }
   ;
 
 banks:

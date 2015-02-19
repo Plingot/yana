@@ -50,6 +50,9 @@ public:
 protected:
   virtual void advance(unsigned short step) {
     _current += step;
+    if (_current > data.end()) {
+      _current = data.end();
+    }
   };
   virtual unsigned char *begin() {
     return data.begin();
@@ -82,6 +85,9 @@ public:
 protected:
   virtual void advance(unsigned short step) {
     _current += step;
+    if (_current > data.end()) {
+      _current = data.end();
+    }
   };
   virtual unsigned char *begin() {
     return data.begin();
