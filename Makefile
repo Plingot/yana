@@ -1,4 +1,4 @@
-CPP_FLAGS=--std=c++11 -Wno-deprecated-register
+CXXFLAGS=--std=c++11 -Wno-deprecated-register
 
 default: clean yana
 
@@ -9,7 +9,7 @@ clean:
 	rm -f yana parser.c parser.h scanner.cpp
 
 yana: opcodes.c parser.c scanner.cpp symbol.cpp bank.cpp
-	$(CXX) $(CPP_FLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 parser.c: parser.y
 	bison -o $@ -d $^
