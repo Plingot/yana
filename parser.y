@@ -45,7 +45,7 @@ BankPtr currentBank;
   struct symbol sym;
 }
 
-%token T_COMMA
+%token T_COMMA T_OPEN_PAREN T_CLOSE_PAREN
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
