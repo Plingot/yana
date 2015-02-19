@@ -144,18 +144,24 @@ instruction:
     loginstr($2);
   }
   | T_INSTR T_BYTE {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO);
+
     currentBank->addByte($1.base);
     currentBank->addByte($2);
 
     loginstr($2);
   }
   | T_INSTR T_WORD {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+
     currentBank->addByte($1.base);
     currentBank->addWord($2);
 
     loginstr($2);
   }
   | T_INSTR T_SYMBOL {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+
     logsymbol($2);
 
     currentBank->addByte($1.base);
