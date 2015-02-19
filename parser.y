@@ -152,6 +152,7 @@ instruction:
     currentBank->addByte($1.base);
     currentBank->addByte($2);
 
+    logoptype("ZERO", $1.base);
     loginstr($2);
   }
   | T_INSTR T_WORD {
@@ -160,15 +161,27 @@ instruction:
     currentBank->addByte($1.base);
     currentBank->addWord($2);
 
+    logoptype("ABS", $1.base);
     loginstr($2);
   }
   | T_INSTR T_SYMBOL {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
 
-    logsymbol($2);
-
     currentBank->addByte($1.base);
     currentBank->addWord($2.address);
+
+    logoptype("ABS", $1.base);
+    loginstr($2.address);
+    logsymbol($2);
+  }
+  | T_INSTR T_WORD T_COMMA T_X_REGISTER {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_X);
+
+    currentBank->addByte($1.base);
+    currentBank->addWord($2);
+
+    logoptype("ABS_X", $1.base);
+    loginstr($2);
   }
   | T_INSTR { loginstr("no value instr."); }
   | T_DATA
