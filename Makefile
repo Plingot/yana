@@ -9,7 +9,7 @@ clean:
 	rm -f yana parser.c parser.h scanner.cpp
 
 yana: opcodes.c parser.c scanner.cpp symbol.cpp bank.cpp
-	llvm-g++ $(CPP_FLAGS) -o $@ $^
+	$(CXX) $(CPP_FLAGS) -o $@ $^
 
 parser.c: parser.y
 	bison -o $@ -d $^
