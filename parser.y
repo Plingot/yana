@@ -183,6 +183,15 @@ instruction:
     logoptype("ABS_X", $1.base);
     loginstr($2);
   }
+  | T_INSTR T_WORD T_COMMA T_Y_REGISTER {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_Y);
+
+    currentBank->addByte($1.base);
+    currentBank->addWord($2);
+
+    logoptype("ABS_Y", $1.base);
+    loginstr($2);
+  }
   | T_INSTR { loginstr("no value instr."); }
   | T_DATA
   | T_FILE
