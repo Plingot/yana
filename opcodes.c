@@ -87,5 +87,5 @@ unsigned char opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_m
   }
 
   // Apart from jmp, it's same as CC10 addresses
-  return obcode_CC10_set_addr_mode(base, addr_mode);
+  return opcode_CC10_set_addr_mode(base, addr_mode);
 }
