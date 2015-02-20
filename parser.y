@@ -164,33 +164,65 @@ instruction:
     loginstr($2);
   }
   | T_INSTR T_BYTE {
-    // Check if we have a branch instruction first
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO);
+    if ($1.type == opcode_BRANCH) {
+      currentBank->addByte($1.base);
+      currentBank->addByte($2);
 
-    currentBank->addByte($1.base);
-    currentBank->addByte($2);
+      logoptype("REL", $1.base);
+      loginstr($2);
+    } else {
+      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO);
+      currentBank->addByte($1.base);
+      currentBank->addByte($2);
 
-    logoptype("ZERO", $1.base);
-    loginstr($2);
+      logoptype("ZERO", $1.base);
+      loginstr($2);
+    }
   }
   | T_INSTR T_WORD {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+    if ($1.type == opcode_BRANCH) {
+      unsigned short from = currentBank->currentOffset();
+      char relative = branch_relative(from, $2);
 
-    currentBank->addByte($1.base);
-    currentBank->addWord($2);
+      currentBank->addByte($1.base);
+      currentBank->addByte(relative);
 
-    logoptype("ABS", $1.base);
-    loginstr($2);
+      logoptype("REL", $1.base);
+      loginstr(from);
+      loginstr($2);
+      loginstr(relative);
+    } else {
+      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+
+      currentBank->addByte($1.base);
+      currentBank->addWord($2);
+
+      logoptype("ABS", $1.base);
+      loginstr($2);
+    }
   }
   | T_INSTR T_SYMBOL {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+    if ($1.type == opcode_BRANCH) {
+      unsigned short from = currentBank->currentOffset();
+      char relative = branch_relative(from, $2.address);
 
-    currentBank->addByte($1.base);
-    currentBank->addWord($2.address);
+      currentBank->addByte($1.base);
+      currentBank->addByte(relative);
 
-    logoptype("ABS", $1.base);
-    loginstr($2.address);
-    logsymbol($2);
+      logoptype("REL", $1.base);
+      loginstr(from);
+      logsymbol($2);
+      loginstr(relative);
+    } else {
+      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+
+      currentBank->addByte($1.base);
+      currentBank->addWord($2.address);
+
+      logoptype("ABS", $1.base);
+      loginstr($2.address);
+      logsymbol($2);
+    }
   }
   | T_INSTR T_BYTE T_COMMA T_X_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO_X);

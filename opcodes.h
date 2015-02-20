@@ -35,4 +35,6 @@ unsigned char opcode_CC01_set_addr_mode(unsigned char base, unsigned char addr_m
 unsigned char opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_mode);
 unsigned char opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_mode);
 
+char branch_relative(unsigned short from, unsigned short to);
+
 #endif

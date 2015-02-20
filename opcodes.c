@@ -89,3 +89,12 @@ unsigned char opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_m
   // Apart from jmp, it's same as CC10 addresses
   return opcode_CC10_set_addr_mode(base, addr_mode);
 }
+
+char branch_relative(unsigned short from, unsigned short to) {
+  short distance = to - from;
+  if (distance < -127 || distance > 128) {
+    // Throw exception
+    return 0;
+  }
+  return (char)distance;
+}
