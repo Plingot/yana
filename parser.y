@@ -28,6 +28,7 @@ void logsymbol(symbol s);
 void yyerror(const char *s);
 
 BankFactory bankFactory;
+BankTable bankTable;
 typedef unique_ptr<Bank> BankPtr;
 BankPtr currentBank;
 InesHeader inesHeader;
@@ -71,6 +72,8 @@ InesHeader inesHeader;
 
 %type <opcode> T_INSTR
 %type <word> org
+%type <byte> bank_header
+%type <byte> bank_no
 
 %%
 program:
@@ -121,16 +124,29 @@ banks:
   ;
 
 bank:
-  bank_header instructions { currentBank->printData(); }
+  bank_header instructions {
+    currentBank->printData();
+
+    bankTable.add($1, move(currentBank));
+  }
   ;
 
 bank_header:
-  bank_no org { currentBank = bankFactory.createBank(PRG, $2); }
-  | org bank_no { currentBank = bankFactory.createBank(PRG, $1); }
+  bank_no org {
+    currentBank = bankFactory.createBank(PRG, $2);
+    $$ = $1;
+  }
+  | org bank_no {
+    currentBank = bankFactory.createBank(PRG, $1);
+    $$ = $2;
+  }
   ;
 
 bank_no:
-  T_BANK T_BYTE { cout << "Starting bank " << dec($2) << endl; }
+  T_BANK T_BYTE {
+    cout << "Starting bank " << dec($2) << endl;
+    $$ = $2;
+  }
   ;
 
 org:
