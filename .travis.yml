@@ -19,7 +19,7 @@ before_install:
 install:
   # g++4.9
   - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.9; fi
-  - if [ "$CXX" = "g++" ]; then export CXXFLAGS="-std=gnu++11 -stdlib=libc++"; fi
+  - if [ "$CXX" = "g++" ]; then export CXXFLAGS="-std=gnu++11 -lc++"; fi
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9"; fi
 
   # clang 3.4
