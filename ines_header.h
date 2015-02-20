@@ -63,7 +63,7 @@ public:
 
   void setMirroring(unsigned char type) {
     // Make sure we only set mirroring bits
-    type = type | 0x9;
+    type = type & 0x9;
     flags6 = flags6 | type;
     updateFlags6();
   };

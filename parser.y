@@ -100,7 +100,13 @@ ines_entry:
   | T_INES_MIR T_BYTE {
     inesHeader.setMirroringNESASM($2);
 
-    cout << dec($2) << " mirroring mode." << endl;
+    cout << inesHeader.mirroring() << " mirroring mode." << endl;
+    if (inesHeader.sram()) {
+      cout << "With SRAM." << endl;
+    }
+    if (inesHeader.trainer()) {
+      cout << "With trainer." << endl;
+    }
   }
   | T_INES_MAP T_BYTE {
     inesHeader.setMapper($2);
