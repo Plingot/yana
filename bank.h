@@ -2,6 +2,7 @@
 #define BANK_H
 
 #include <array>
+#include <map>
 
 using namespace std;
 
@@ -125,6 +126,19 @@ public:
     unique_ptr<Bank> result(bank);
     return result;
   }
+};
+
+struct less_num {
+
+};
+
+class BankTable {
+public:
+  void add(unsigned int number, unique_ptr<Bank> bank);
+  Bank *find(unsigned int number);
+
+private:
+  map<unsigned int, unique_ptr<Bank> > bank_map;
 };
 
 #endif

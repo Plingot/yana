@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <iterator>
+#include <map>
 #include "bank.h"
 
 using namespace std;
@@ -41,4 +42,17 @@ void Bank::printData() {
     }
   }
   cout << endl << "-- End of data --" << endl << endl;
+}
+
+void BankTable::add(unsigned int number, unique_ptr<Bank> bank) {
+  bank_map[number] = move(bank);
+}
+
+Bank *BankTable::find(unsigned int number) {
+  map<unsigned int, unique_ptr<Bank> >::iterator it;
+  it = bank_map.find(number);
+  if (it == bank_map.end()) {
+    return NULL;
+  }
+  return it->second.get();
 }
