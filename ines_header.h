@@ -34,8 +34,16 @@ public:
     data.at(4) = size;
   };
 
+  unsigned char prgRomSize() {
+    return data.at(4);
+  };
+
   void setCHRRomSize(unsigned char size) {
     data.at(5) = size;
+  };
+
+  unsigned char chrRomSize() {
+    return data.at(5);
   };
 
   void setMapper(unsigned char mapper) {
@@ -47,11 +55,40 @@ public:
     updateFlags7();
   };
 
+  unsigned char mapper() {
+    unsigned char lower = (flags6 >> 4);
+    unsigned char upper = (flags7 >> 4);
+    return (upper << 4) + lower;
+  };
+
   void setMirroring(unsigned char type) {
     // Make sure we only set mirroring bits
     type = type | 0x9;
     flags6 = flags6 | type;
     updateFlags6();
+  };
+
+  string mirroring() {
+    unsigned char mirrorValue = flags6 & 0x9;
+    string ret;
+    switch (mirrorValue) {
+      case HORZ_MIRROR:
+        ret = "HORZ";
+        break;
+
+      case VERT_MIRROR:
+        ret = "VERT";
+        break;
+
+      case FOUR_SCREEN:
+        ret = "4SCR";
+        break;
+
+      default:
+        ret = "UNKNOWN";
+        break;
+    }
+    return ret;
   };
 
   void setPRGRamSize(unsigned char size) {
@@ -67,6 +104,10 @@ public:
     updateFlags6();
   };
 
+  bool sram() {
+    return ((flags6 & 0x2) > 0);
+  };
+
   void setTrainer(bool trainer) {
     if (trainer) {
       flags6 = flags6 | 0x4;
@@ -74,6 +115,10 @@ public:
       flags6 = flags6 ^ 0x4;
     }
     updateFlags6();
+  };
+
+  bool trainer() {
+    return ((flags6 & 0x4) > 0);
   };
 
   void setMirroringNESASM(unsigned char value) {
