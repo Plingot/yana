@@ -98,7 +98,7 @@ ines_entry:
     cout << dec($2) << " chr banks." << endl;
   }
   | T_INES_MIR T_BYTE {
-    // TODO: Figure out how nesasm handles
+    inesHeader.setMirroringNESASM($2);
 
     cout << dec($2) << " mirroring mode." << endl;
   }

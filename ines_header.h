@@ -76,6 +76,47 @@ public:
     updateFlags6();
   };
 
+  void setMirroringNESASM(unsigned char value) {
+    /*
+    0 = H (Horizontal Mirroring ONLY)
+    1 = V (Vertical Mirroring ONLY)
+    2 = H + Bat. (Horiztonal Mirroring + Battery ON)
+    3 = V + Bat. (Vertical Mirroring + Battery ON)
+    4 = H + Train. (Horizontal Mirroring + Trainer ON)
+    5 = V + Train. (Vertical Mirroring + Trainer ON)
+    6 = H + Bat. + Train. (Horizontal Mirroring + Battery and Trainer ON)
+    7 = V + Bat. + Train. (Vertical Mirroring + Battery and Trainer ON)
+    8 = H + 4scr. (Horizontal Mirroring + 4 Screen VRAM ON)
+    9 = V + 4scr. (Vertical Mirroring + 4 Screen VRAM ON)
+    A = H + Bat. + 4scr. (Horizontal Mirroring + Battery and 4 Screen VRAM ON)
+    B = V + Bat. + 4scr. (Vertical Mirroring + Battery and 4 Screen VRAM ON)
+    C = H + 4scr. + Train. (Horizontal Mirroring + 4 Screen VRAM and Trainer ON)
+    D = V + 4scr. + Train. (Vertical Mirroring + 4 Screen VRAM and Trainer ON)
+    E = H + Bat. + 4scr. + Train. (Horizontal Mirroring + Battery, 4 Screen VRAM,
+    and Trainer ON)
+    F = V + Bat. + 4scr. + Train. (Vertical Mirroring + Battery, 4 Screen VRAM,
+    and Trainer ON)
+     */
+
+    // Make sure we only care about lower nybble
+    value = value & 0xf;
+
+    // Mirroring mode
+    if ((value & 0x8) > 0) {
+      setMirroring(FOUR_SCREEN);
+    } else if ((value & 0x1) > 0){
+      setMirroring(VERT_MIRROR);
+    } else {
+      setMirroring(HORZ_MIRROR);
+    }
+
+    // SRAM
+    setSRAM(((value & 0x2) > 0));
+
+    // Trainer
+    setTrainer(((value & 0x4) > 0));
+  };
+
   virtual unsigned char operator[](unsigned short i) const {
     return data.at(i);
   };
