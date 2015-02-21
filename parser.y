@@ -133,9 +133,7 @@ bank:
 
 bank_header:
   bank_no org {
-    if ($1 >= inesHeader.romBanks()) {
-      yyerror("Attempting to create bank that's not specified in the ines headers.");
-    }
+    // TODO: Check that we're not trying to create more banks than specified
 
     bank_type type = PRG;
     if ($1 >= inesHeader.prgRomSize()) {
