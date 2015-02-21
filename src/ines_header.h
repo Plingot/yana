@@ -166,13 +166,6 @@ public:
     setTrainer(((value & 0x4) > 0));
   };
 
-  virtual unsigned char operator[](unsigned short i) const {
-    return data.at(i);
-  };
-  virtual unsigned char &operator[](unsigned short i) {
-    return data.at(i);
-  };
-
 protected:
   virtual void advance(short step) {
     _current += step;

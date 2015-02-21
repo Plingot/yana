@@ -18,9 +18,6 @@ public:
   void addBinary(const char *fileName);
   void printData();
 
-  virtual unsigned char operator[](unsigned short i) const = 0;
-  virtual unsigned char &operator[](unsigned short i) = 0;
-
   unsigned short bankOffset() { return _bankOffset; };
   unsigned short currentOffset() {
     return bankOffset() + (current() - begin());
@@ -46,13 +43,6 @@ class Bank8 : public Bank {
 public:
   Bank8(unsigned short i) : Bank(i), _current(data.begin()) {};
   ~Bank8() {};
-
-  virtual unsigned char operator[](unsigned short i) const {
-    return data.at(i);
-  };
-  virtual unsigned char &operator[](unsigned short i) {
-    return data.at(i);
-  };
 
 protected:
   virtual void advance(short step) {
@@ -83,13 +73,6 @@ class Bank16 : public Bank {
 public:
   Bank16(unsigned short i) : Bank(i), _current(data.begin()) {};
   ~Bank16() {};
-
-  virtual unsigned char operator[](unsigned short i) const {
-    return data.at(i);
-  };
-  virtual unsigned char &operator[](unsigned short i) {
-    return data.at(i);
-  };
 
 protected:
   virtual void advance(short step) {
