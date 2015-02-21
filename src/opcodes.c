@@ -80,11 +80,13 @@ unsigned char opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_m
 
 unsigned char opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_mode) {
   // Check if it's jmp
-  if (base == 0x40) {
-    if (addr_mode == mode_ABS) {
-      base = 0x60;
-    }
-  }
+  // TODO: Check when 0x6c should be used rather than 0x4c
+  //
+  // if (base == 0x40) {
+  //   if (addr_mode == mode_ABS) {
+  //     base = 0x60;
+  //   }
+  // }
 
   // Apart from jmp, it's same as CC10 addresses
   return opcode_CC10_set_addr_mode(base, addr_mode);
