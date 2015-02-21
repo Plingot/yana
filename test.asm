@@ -1,4 +1,4 @@
-	.inesprg	2
+	.inesprg	1
 	.ineschr	1
 	.inesmir	1
 	.inesmap	0
