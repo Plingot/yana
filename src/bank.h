@@ -13,6 +13,7 @@ public:
   Bank(unsigned short i) : _bankOffset(i) {};
   ~Bank() {};
 
+  void alignOffset(unsigned short alignment);
   void addByte(unsigned char byte);
   void addWord(unsigned short word);
   void addBinary(const char *fileName);
@@ -23,10 +24,9 @@ public:
     return bankOffset() + (current() - begin());
   };
   void advanceOffset(unsigned short offset) {
-    cout << "Current offset: $" << hex << currentOffset() << endl;
     short relative = offset - currentOffset();
     advance(relative);
-    cout << "Advanced " << relative << " steps, to: $" << hex << offset << endl;
+    cout << "Advanced $" << hex << relative << " steps, to: $" << hex << currentOffset() << endl;
   };
 
 protected:
@@ -38,6 +38,8 @@ protected:
 
 private:
   unsigned short _bankOffset;
+
+  void alignBankOffset();
 };
 
 class Bank8 : public Bank {
@@ -119,12 +121,14 @@ public:
     switch (type) {
       case PRG16:
         bank = new Bank16(offset);
+        bank->alignOffset(0x4000);
         break;
 
       case CHR:
       case PRG:
       default:
         bank = new Bank8(offset);
+        bank->alignOffset(0x2000);
         break;
     }
 

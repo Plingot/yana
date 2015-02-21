@@ -143,7 +143,7 @@ bank_header:
     currentBank = bankFactory.createBank(type, $2);
     $$ = $1;
 
-    cout << "Bank start: " << hex($2) << endl;
+    cout << "Bank start: " << hex(currentBank->bankOffset()) << endl;
   }
   | org bank_no {
     if ($2 >= inesHeader.romBanks()) {
@@ -158,7 +158,7 @@ bank_header:
     currentBank = bankFactory.createBank(type, $1);
     $$ = $2;
 
-    cout << "Bank start: " << hex($1) << endl;
+    cout << "Bank start: " << hex(currentBank->bankOffset()) << endl;
   }
   ;
 

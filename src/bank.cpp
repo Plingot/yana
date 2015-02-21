@@ -8,6 +8,20 @@
 
 using namespace std;
 
+void Bank::alignOffset(unsigned short alignment) {
+  unsigned short alignOffset = 0x0;
+  unsigned short alignDiff = bankOffset() - alignOffset;
+  while (alignDiff >= alignment) {
+    alignOffset += alignment;
+    alignDiff = bankOffset() - alignOffset;
+  }
+
+  _bankOffset = alignOffset;
+  if (alignDiff > 0) {
+    advanceOffset(_bankOffset + alignDiff);
+  }
+}
+
 void Bank::addByte(unsigned char byte) {
   *current() = byte;
   advance(1);
