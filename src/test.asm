@@ -124,7 +124,7 @@ Loop:
 
 
 		; Vector table
-	.bank 1
+	.bank	1
 	.org	$fffa
 	.dw		0			; (NMI_Routine)
 	.dw		Start		; (Reset_Routine)

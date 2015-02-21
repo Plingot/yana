@@ -28,6 +28,7 @@ void logsymbol(symbol s);
 void yyerror(const char *s);
 
 BankFactory bankFactory;
+BankTable bankTable;
 typedef unique_ptr<Bank> BankPtr;
 BankPtr currentBank;
 InesHeader inesHeader;
@@ -71,6 +72,8 @@ InesHeader inesHeader;
 
 %type <opcode> T_INSTR
 %type <word> org
+%type <byte> bank_header
+%type <byte> bank_no
 
 %%
 program:
@@ -98,9 +101,15 @@ ines_entry:
     cout << dec($2) << " chr banks." << endl;
   }
   | T_INES_MIR T_BYTE {
-    // TODO: Figure out how nesasm handles
+    inesHeader.setMirroringNESASM($2);
 
-    cout << dec($2) << " mirroring mode." << endl;
+    cout << inesHeader.mirroring() << " mirroring mode." << endl;
+    if (inesHeader.sram()) {
+      cout << "With SRAM." << endl;
+    }
+    if (inesHeader.trainer()) {
+      cout << "With trainer." << endl;
+    }
   }
   | T_INES_MAP T_BYTE {
     inesHeader.setMapper($2);
@@ -115,23 +124,53 @@ banks:
   ;
 
 bank:
-  bank_header instructions { currentBank->printData(); }
+  bank_header instructions {
+    currentBank->printData();
+
+    bankTable.add($1, move(currentBank));
+  }
   ;
 
 bank_header:
-  bank_no org { currentBank = bankFactory.createBank(PRG, $2); }
-  | org bank_no { currentBank = bankFactory.createBank(PRG, $1); }
+  bank_no org {
+    // TODO: Check that we're not trying to create more banks than specified
+
+    bank_type type = PRG;
+    if ($1 >= inesHeader.prgRomSize()) {
+      type = CHR;
+    }
+
+    currentBank = bankFactory.createBank(type, $2);
+    $$ = $1;
+
+    cout << "Bank start: " << hex(currentBank->bankOffset()) << endl;
+  }
+  | org bank_no {
+    if ($2 >= inesHeader.romBanks()) {
+      yyerror("Attempting to create bank that's not specified in the ines headers.");
+    }
+
+    bank_type type = PRG;
+    if ($2 >= inesHeader.prgRomSize()) {
+      type = CHR;
+    }
+
+    currentBank = bankFactory.createBank(type, $1);
+    $$ = $2;
+
+    cout << "Bank start: " << hex(currentBank->bankOffset()) << endl;
+  }
   ;
 
 bank_no:
-  T_BANK T_BYTE { cout << "Starting bank " << dec($2) << endl; }
+  T_BANK T_BYTE {
+    cout << "Starting bank " << dec($2) << endl;
+    $$ = $2;
+  }
   ;
 
 org:
-  T_ORG T_WORD {
-    cout << "Bank start: " << hex($2) << endl;
-    $$ = $2;
-  }
+  T_ORG T_WORD { $$ = $2; }
   ;
 
 instructions:
@@ -164,33 +203,65 @@ instruction:
     loginstr($2);
   }
   | T_INSTR T_BYTE {
-    // Check if we have a branch instruction first
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO);
+    if ($1.type == opcode_BRANCH) {
+      currentBank->addByte($1.base);
+      currentBank->addByte($2);
 
-    currentBank->addByte($1.base);
-    currentBank->addByte($2);
+      logoptype("REL", $1.base);
+      loginstr($2);
+    } else {
+      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO);
+      currentBank->addByte($1.base);
+      currentBank->addByte($2);
 
-    logoptype("ZERO", $1.base);
-    loginstr($2);
+      logoptype("ZERO", $1.base);
+      loginstr($2);
+    }
   }
   | T_INSTR T_WORD {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+    if ($1.type == opcode_BRANCH) {
+      unsigned short from = currentBank->currentOffset();
+      char relative = branch_relative(from, $2);
 
-    currentBank->addByte($1.base);
-    currentBank->addWord($2);
+      currentBank->addByte($1.base);
+      currentBank->addByte(relative);
 
-    logoptype("ABS", $1.base);
-    loginstr($2);
+      logoptype("REL", $1.base);
+      loginstr(from);
+      loginstr($2);
+      loginstr(relative);
+    } else {
+      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+
+      currentBank->addByte($1.base);
+      currentBank->addWord($2);
+
+      logoptype("ABS", $1.base);
+      loginstr($2);
+    }
   }
   | T_INSTR T_SYMBOL {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+    if ($1.type == opcode_BRANCH) {
+      unsigned short from = currentBank->currentOffset();
+      char relative = branch_relative(from, $2.address);
 
-    currentBank->addByte($1.base);
-    currentBank->addWord($2.address);
+      currentBank->addByte($1.base);
+      currentBank->addByte(relative);
 
-    logoptype("ABS", $1.base);
-    loginstr($2.address);
-    logsymbol($2);
+      logoptype("REL", $1.base);
+      loginstr(from);
+      logsymbol($2);
+      loginstr(relative);
+    } else {
+      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+
+      currentBank->addByte($1.base);
+      currentBank->addWord($2.address);
+
+      logoptype("ABS", $1.base);
+      loginstr($2.address);
+      logsymbol($2);
+    }
   }
   | T_INSTR T_BYTE T_COMMA T_X_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO_X);
@@ -240,6 +311,11 @@ instruction:
   | T_INSTR { loginstr("no value instr."); }
   | T_DATA
   | T_FILE
+  | org {
+    currentBank->advanceOffset($1);
+
+    cout << "Moving to address: " << hex($1) << endl;
+  }
   | UNKNOWN { yyerror("Unknown instruction"); }
   ;
 
@@ -325,6 +401,12 @@ int main() {
   do {
     yyparse();
   } while (!feof(yyin));
+
+  // write the assembled binary
+  fstream binary = fstream("test.nes", ios::out | ios::binary);
+  inesHeader.write(binary);
+  bankTable.write(binary);
+  binary.close();
 }
 
 string hex(unsigned int c) {

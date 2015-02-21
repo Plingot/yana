@@ -2,4 +2,3 @@ parser.c
 parser.h
 scanner.cpp
 yana
-test.nes
