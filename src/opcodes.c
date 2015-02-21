@@ -93,7 +93,8 @@ unsigned char opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_m
 }
 
 char branch_relative(unsigned short from, unsigned short to) {
-  short distance = to - from;
+  // We're assuming that from is sent pre change of offset
+  short distance = (to - 1) - (from + 1);
   if (distance < -127 || distance > 128) {
     // Throw exception
     return 0;
