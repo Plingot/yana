@@ -1,7 +1,7 @@
 default: clean yana
 
-test: default
-	cd src/ ; ./yana
+test:
+	cd src/ ; make test
 
 clean:
 	cd src/ ; make clean

@@ -401,6 +401,12 @@ int main() {
   do {
     yyparse();
   } while (!feof(yyin));
+
+  // write the assembled binary
+  fstream binary = fstream("test.nes", ios::out | ios::binary);
+  inesHeader.write(binary);
+  bankTable.write(binary);
+  binary.close();
 }
 
 string hex(unsigned int c) {

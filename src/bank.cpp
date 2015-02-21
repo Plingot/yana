@@ -70,3 +70,10 @@ Bank *BankTable::find(unsigned int number) {
   }
   return it->second.get();
 }
+
+void BankTable::write(fstream &file) {
+  map<unsigned int, unique_ptr<Bank> >::iterator it;
+  for (it = bank_map.begin(); it != bank_map.end(); it++) {
+    it->second->write(file);
+  }
+}

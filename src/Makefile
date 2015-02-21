@@ -4,6 +4,7 @@ default: clean yana
 
 test: default
 	./yana
+	cmp test.nes test_nesasm.nes
 
 clean:
 	rm -f yana parser.c parser.h scanner.cpp

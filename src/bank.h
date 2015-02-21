@@ -3,6 +3,7 @@
 
 #include <array>
 #include <map>
+#include <fstream>
 
 using namespace std;
 
@@ -28,6 +29,8 @@ public:
     advance(relative);
     cout << "Advanced $" << hex << relative << " steps, to: $" << hex << currentOffset() << endl;
   };
+
+  virtual void write(fstream &file) = 0;
 
 protected:
   virtual void advance(short step) = 0;
@@ -71,6 +74,10 @@ protected:
     data.fill(value);
   };
 
+  virtual void write(fstream &file) {
+    file.write((const char *)data.begin(), data.end() - data.begin());
+  };
+
 private:
   typedef array<unsigned char, 8192> Array8k;
   Array8k data;
@@ -104,6 +111,10 @@ protected:
   };
   virtual void fill(unsigned char value) {
     data.fill(value);
+  };
+
+  virtual void write(fstream &file) {
+    file.write((const char *)data.begin(), data.end() - data.begin());
   };
 
 private:
@@ -145,6 +156,7 @@ class BankTable {
 public:
   void add(unsigned int number, unique_ptr<Bank> bank);
   Bank *find(unsigned int number);
+  void write(fstream &file);
 
 private:
   map<unsigned int, unique_ptr<Bank> > bank_map;

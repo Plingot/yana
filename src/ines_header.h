@@ -166,6 +166,10 @@ public:
     setTrainer(((value & 0x4) > 0));
   };
 
+  virtual void write(fstream &file) {
+    file.write((const char *)data.begin(), data.end() - data.begin());
+  };
+
 protected:
   virtual void advance(short step) {
     _current += step;
