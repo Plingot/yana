@@ -7,7 +7,7 @@ test: default
 	cmp test.nes test_nesasm.nes
 
 clean:
-	rm -f yana parser.c parser.h scanner.cpp
+	rm -f yana parser.c parser.h scanner.cpp test.nes
 
 yana: opcodes.c parser.c scanner.cpp symbol.cpp bank.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
