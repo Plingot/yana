@@ -46,6 +46,10 @@ public:
     return data.at(5);
   };
 
+  unsigned char romBanks() {
+    return prgRomSize() + chrRomSize();
+  }
+
   void setMapper(unsigned char mapper) {
     unsigned char upper = mapper >> 4;
     unsigned char lower = mapper & 0xf;

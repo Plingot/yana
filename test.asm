@@ -1,4 +1,4 @@
-	.inesprg	1
+	.inesprg	2
 	.ineschr	1
 	.inesmir	1
 	.inesmap	0
@@ -124,7 +124,7 @@ Loop:
 
 
 		; Vector table
-	.bank 1
+	.bank	1
 	.org	$fffa
 	.dw		0			; (NMI_Routine)
 	.dw		Start		; (Reset_Routine)

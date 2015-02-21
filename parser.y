@@ -133,12 +133,34 @@ bank:
 
 bank_header:
   bank_no org {
-    currentBank = bankFactory.createBank(PRG, $2);
+    if ($1 >= inesHeader.romBanks()) {
+      yyerror("Attempting to create bank that's not specified in the ines headers.");
+    }
+
+    bank_type type = PRG;
+    if ($1 >= inesHeader.prgRomSize()) {
+      type = CHR;
+    }
+
+    currentBank = bankFactory.createBank(type, $2);
     $$ = $1;
+
+    cout << "Bank start: " << hex($2) << endl;
   }
   | org bank_no {
-    currentBank = bankFactory.createBank(PRG, $1);
+    if ($2 >= inesHeader.romBanks()) {
+      yyerror("Attempting to create bank that's not specified in the ines headers.");
+    }
+
+    bank_type type = PRG;
+    if ($2 >= inesHeader.prgRomSize()) {
+      type = CHR;
+    }
+
+    currentBank = bankFactory.createBank(type, $1);
     $$ = $2;
+
+    cout << "Bank start: " << hex($1) << endl;
   }
   ;
 
