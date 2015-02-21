@@ -170,10 +170,12 @@ public:
   };
 
 protected:
-  virtual void advance(unsigned short step) {
+  virtual void advance(short step) {
     _current += step;
     if (_current > data.end()) {
       _current = data.end();
+    } else if (_current < data.begin()) {
+      _current = data.begin();
     }
   };
   virtual unsigned char *begin() {

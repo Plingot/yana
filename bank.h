@@ -25,9 +25,15 @@ public:
   unsigned short currentOffset() {
     return bankOffset() + (current() - begin());
   };
+  void advanceOffset(unsigned short offset) {
+    cout << "Current offset: $" << hex << currentOffset() << endl;
+    short relative = offset - currentOffset();
+    advance(relative);
+    cout << "Advanced " << relative << " steps, to: $" << hex << offset << endl;
+  };
 
 protected:
-  virtual void advance(unsigned short step) = 0;
+  virtual void advance(short step) = 0;
   virtual unsigned char *begin() = 0;
   virtual unsigned char *current() = 0;
   virtual unsigned char *last() = 0;
@@ -49,10 +55,12 @@ public:
   };
 
 protected:
-  virtual void advance(unsigned short step) {
+  virtual void advance(short step) {
     _current += step;
     if (_current > data.end()) {
       _current = data.end();
+    } else if (_current < data.begin()) {
+      _current = data.begin();
     }
   };
   virtual unsigned char *begin() {
@@ -84,10 +92,12 @@ public:
   };
 
 protected:
-  virtual void advance(unsigned short step) {
+  virtual void advance(short step) {
     _current += step;
     if (_current > data.end()) {
       _current = data.end();
+    } else if (_current < data.begin()) {
+      _current = data.begin();
     }
   };
   virtual unsigned char *begin() {
