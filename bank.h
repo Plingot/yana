@@ -6,7 +6,7 @@
 
 using namespace std;
 
-enum bank_type{PRG, CHR};
+enum bank_type{PRG, PRG16, CHR};
 
 class Bank {
 public:
@@ -123,13 +123,14 @@ public:
     Bank *bank;
 
     switch (type) {
-      case CHR:
-        bank = new Bank8(offset);
+      case PRG16:
+        bank = new Bank16(offset);
         break;
 
+      case CHR:
       case PRG:
       default:
-        bank = new Bank16(offset);
+        bank = new Bank8(offset);
         break;
     }
 
