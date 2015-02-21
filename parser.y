@@ -150,10 +150,7 @@ bank_no:
   ;
 
 org:
-  T_ORG T_WORD {
-    cout << "Bank start: " << hex($2) << endl;
-    $$ = $2;
-  }
+  T_ORG T_WORD { $$ = $2; }
   ;
 
 instructions:
@@ -294,6 +291,11 @@ instruction:
   | T_INSTR { loginstr("no value instr."); }
   | T_DATA
   | T_FILE
+  | org {
+    currentBank->advanceOffset($1);
+
+    cout << "Moving to address: " << hex($1) << endl;
+  }
   | UNKNOWN { yyerror("Unknown instruction"); }
   ;
 
