@@ -169,9 +169,9 @@ X                      { return T_X_REGISTER; }
 Y                      { return T_Y_REGISTER; }
 A                      { return T_ACCUMULATOR; }
 
-#\$[a-fA-F0-9]{2}      { /*Byte hex value - immediate */ yylval.byte = strtol(yytext + 1, 0, 16); return T_BYTE_IMM; } ;
+#\$[a-fA-F0-9]{2}      { /*Byte hex value - immediate */ yylval.byte = strtol(yytext + 2, 0, 16); return T_BYTE_IMM; } ;
 \$[a-fA-F0-9]{2}       { /*Byte hex value */ yylval.byte = strtol(yytext + 1, 0, 16); return T_BYTE; } ;
-#\$[a-fA-F0-9]{4}      { /*Word hex value - immediate */ yylval.word = strtol(yytext + 1, 0, 16); return T_WORD_IMM; } ;
+#\$[a-fA-F0-9]{4}      { /*Word hex value - immediate */ yylval.word = strtol(yytext + 2, 0, 16); return T_WORD_IMM; } ;
 \$[a-fA-F0-9]{4}       { /*Word hex value */ yylval.word = strtol(yytext + 1, 0, 16); return T_WORD; } ;
 #%[01]{8}              { /*Byte immediate binary value */ yylval.byte = strtol(yytext + 2, 0, 2); return T_BYTE_IMM; } ;
 %[01]{8}               { /*Byte binary value */ yylval.byte = strtol(yytext + 1, 0, 2); return T_BYTE; } ;
