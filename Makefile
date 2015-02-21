@@ -1,18 +1,10 @@
-CXXFLAGS=--std=c++11 -Wno-deprecated-register
-
 default: clean yana
 
 test: default
-	./yana
+	cd src/ ; ./yana
 
 clean:
-	rm -f yana parser.c parser.h scanner.cpp
+	cd src/ ; make clean
 
-yana: opcodes.c parser.c scanner.cpp symbol.cpp bank.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^
-
-parser.c: parser.y
-	bison -o $@ -d $^
-
-scanner.cpp: scanner.l
-	flex -o $@ $^
+yana:
+	cd src/ ; make yana
