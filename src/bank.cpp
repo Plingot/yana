@@ -29,7 +29,7 @@ void Bank::addBinary(const char *fileName) {
   file.close();
 }
 
-#define BYTES_PER_LINE 20
+#define BYTES_PER_LINE 24
 
 void Bank::printData() {
   int lineCount = BYTES_PER_LINE;

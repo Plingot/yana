@@ -34,6 +34,7 @@ protected:
   virtual unsigned char *begin() = 0;
   virtual unsigned char *current() = 0;
   virtual unsigned char *last() = 0;
+  virtual void fill(unsigned char value) = 0;
 
 private:
   unsigned short _bankOffset;
@@ -41,7 +42,9 @@ private:
 
 class Bank8 : public Bank {
 public:
-  Bank8(unsigned short i) : Bank(i), _current(data.begin()) {};
+  Bank8(unsigned short i) : Bank(i), _current(data.begin()) {
+    fill(0xff);
+  };
   ~Bank8() {};
 
 protected:
@@ -62,6 +65,9 @@ protected:
   virtual unsigned char *last() {
     return data.end();
   };
+  virtual void fill(unsigned char value) {
+    data.fill(value);
+  };
 
 private:
   typedef array<unsigned char, 8192> Array8k;
@@ -71,7 +77,9 @@ private:
 
 class Bank16 : public Bank {
 public:
-  Bank16(unsigned short i) : Bank(i), _current(data.begin()) {};
+  Bank16(unsigned short i) : Bank(i), _current(data.begin()) {
+    fill(0xff);
+  };
   ~Bank16() {};
 
 protected:
@@ -91,6 +99,9 @@ protected:
   };
   virtual unsigned char *last() {
     return data.end();
+  };
+  virtual void fill(unsigned char value) {
+    data.fill(value);
   };
 
 private:

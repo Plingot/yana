@@ -184,6 +184,9 @@ protected:
   virtual unsigned char *last() {
     return data.end();
   };
+  virtual void fill(unsigned char value) {
+    data.fill(value);
+  };
 
 private:
   void updateFlags6() {
