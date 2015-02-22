@@ -406,7 +406,7 @@ void logaddrmode(const char *mode) {
 }
 
 void logline() {
-  cout << "(" << line_num << ")\t";
+  cout << "(" << dec(line_num) << ")\t";
 }
 
 void loginstr(unsigned int c) {
@@ -425,7 +425,7 @@ void logsymbol(symbol s) {
 }
 
 void yyerror(const char *s) {
-  cout << "Error on line (" << line_num << "): " << s << endl;
+  cout << "Error on line (" << dec(line_num) << "): " << s << endl;
   cout << "\nAborting!\n" << endl;
   exit(-1);
 }
