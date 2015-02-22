@@ -148,10 +148,6 @@ public:
   }
 };
 
-struct less_num {
-
-};
-
 class BankTable {
 public:
   void add(unsigned int number, unique_ptr<Bank> bank);
