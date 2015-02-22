@@ -27,11 +27,12 @@ void loginstr(const char *s);
 void logsymbol(symbol s);
 void yyerror(const char *s);
 
+extern BankTable bankTable;
+extern InesHeader inesHeader;
+
 BankFactory bankFactory;
-BankTable bankTable;
 typedef unique_ptr<Bank> BankPtr;
 BankPtr currentBank;
-InesHeader inesHeader;
 
 %}
 
@@ -383,31 +384,6 @@ T_FILE:
   ;
 
 %%
-
-int main() {
-  const char *fileName = "test.asm";
-
-  // open a file handle to a particular file:
-  FILE *myfile = fopen(fileName, "r");
-  // make sure it's valid:
-  if (!myfile) {
-    cout << "I can't open " << fileName << " file!" << endl;
-    return -1;
-  }
-  // set flex to read from it instead of defaulting to STDIN:
-  yyin = myfile;
-
-  // parse through the input until there is no more:
-  do {
-    yyparse();
-  } while (!feof(yyin));
-
-  // write the assembled binary
-  fstream binary = fstream("test.nes", ios::out | ios::binary);
-  inesHeader.write(binary);
-  bankTable.write(binary);
-  binary.close();
-}
 
 string hex(unsigned int c) {
   ostringstream stm;

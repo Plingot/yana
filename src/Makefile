@@ -9,7 +9,7 @@ test: default
 clean:
 	rm -f yana parser.c parser.h scanner.cpp test.nes
 
-yana: opcodes.c parser.c scanner.cpp symbol.cpp bank.cpp
+yana: main.cpp opcodes.c parser.c scanner.cpp symbol.cpp bank.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 parser.c: parser.y

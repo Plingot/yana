@@ -1,6 +1,7 @@
 #ifndef INES_HEADER_H
 #define INES_HEADER_H
 
+#include <iostream>
 #include "bank.h"
 
 using namespace std;
