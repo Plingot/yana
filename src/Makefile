@@ -1,4 +1,4 @@
-CXXFLAGS=--std=c++11 -Wno-deprecated-register
+CXXFLAGS=-std=c++0x -stdlib=libc++ -Wno-deprecated-register
 
 SAMPLES=test.asm sprites.asm
 BINARIES=$(SAMPLES:.asm=.nes)
