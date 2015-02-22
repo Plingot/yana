@@ -77,3 +77,27 @@ void BankTable::write(fstream &file) {
     it->second->write(file);
   }
 }
+
+bool BankTable::updateForwardSymbols(SymbolTable &symbolTable) {
+  vector<forward_symbol>::iterator it;
+  for (it = symbolTable.forward_symbols_begin(); it != symbolTable.forward_symbols_end(); ++it) {
+    forward_symbol forward = *it;
+    symbol sym = symbolTable.find(forward.name);
+    if (sym.name) {
+      Bank *bank = find(forward.bankNo);
+      if (bank) {
+        bank->advanceOffset(forward.address);
+        bank->addWord(sym.address);
+      } else {
+        cerr << "error: Bank not found [" << (int)forward.bankNo << "]!" << endl;
+        cerr << "Referenced [" << forward.name << "] at line (" << forward.lineNum << ")." << endl;
+        return false;
+      }
+    } else {
+      cerr << "error: Symbol not found [" << forward.name << "]!" << endl;
+      cerr << "Referenced [" << forward.name << "] at line (" << forward.lineNum << ")." << endl;
+      return false;
+    }
+  }
+  return true;
+}
