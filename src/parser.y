@@ -83,9 +83,9 @@ unsigned char currentBankNo;
 program:
   ines_header banks {
     cout << "Update forward symbols." << endl;
-    //if (!bankTable.updateForwardSymbols(localSymbols)) {
-    //  yyerror("Failed to update forward symbols.");
-    //}
+    if (!bankTable.updateForwardSymbols(localSymbols)) {
+      yyerror("Failed to update forward symbols.");
+    }
   }
   ;
 
