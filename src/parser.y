@@ -25,6 +25,7 @@ void logaddrmode(const char *mode);
 void loginstr(unsigned int c);
 void loginstr(const char *s);
 void logsymbol(symbol s);
+void logforwardsymbol(const char *s);
 void yyerror(const char *s);
 
 extern BankTable bankTable;
@@ -282,6 +283,7 @@ instruction:
       currentBank->advance(2);
 
       logoptype("ABS", $1.base);
+      logforwardsymbol($2);
     }
   }
   | T_INSTR T_BYTE T_COMMA T_X_REGISTER {
@@ -320,6 +322,7 @@ instruction:
     currentBank->advance(2);
 
     logoptype("ABS_X", $1.base);
+    logforwardsymbol($2);
   }
   | T_INSTR T_WORD T_COMMA T_Y_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_Y);
@@ -348,6 +351,7 @@ instruction:
     currentBank->advance(2);
 
     logoptype("ABS_Y", $1.base);
+    logforwardsymbol($2);
   }
   | T_INSTR T_OPEN_PAREN T_WORD T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_Y);
@@ -376,6 +380,7 @@ instruction:
     currentBank->advance(2);
 
     logoptype("IND_Y", $1.base);
+    logforwardsymbol($3);
   }
   | T_INSTR T_OPEN_PAREN T_WORD T_COMMA T_X_REGISTER T_CLOSE_PAREN {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_X);
@@ -404,6 +409,7 @@ instruction:
     currentBank->advance(2);
 
     logoptype("IND_X", $1.base);
+    logforwardsymbol($3);
   }
   | T_INSTR {
     currentBank->addByte($1.base);
@@ -442,7 +448,8 @@ T_DATA:
     localSymbols.addForward($2, currentBankNo, currentBank->currentOffset(), line_num);
     currentBank->advance(2);
 
-    cout << "word data: forward symbol [" << $2 << "]" << endl;
+    cout << "word data: ";
+    logforwardsymbol($2);
   }
   | T_DATA_BYTE { cout << "byte data: " << endl; } T_BYTES
   ;
@@ -545,6 +552,11 @@ void loginstr(const char *s) {
 void logsymbol(symbol s) {
   logline();
   cout << "Symbol [" << s.name << "] = " << hex(s.address) << endl;
+}
+
+void logforwardsymbol(const char *s) {
+  logline();
+  cout << "Forward symbol [" << s << "]" << endl;
 }
 
 void yyerror(const char *s) {
