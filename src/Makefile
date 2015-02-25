@@ -2,14 +2,14 @@ CXXFLAGS=-std=c++0x -stdlib=libc++ -Wno-deprecated-register
 
 SAMPLES=test.asm sprites.asm
 BINARIES=$(SAMPLES:.asm=.nes)
-CMP_BINARIES=$(BINARIES:.nes=_nesasm.nes)
+CMP_BINARIES=$(BINARIES:.nes=)
 
 default: clean yana
 
 test: default $(CMP_BINARIES)
 
-%_nesasm.nes: %.nes
-	cmp $^ $@
+%: %.nes
+	cmp $^ $@_nesasm.nes
 
 %.nes: %.asm
 	./yana -o $@ $<
