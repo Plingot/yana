@@ -405,7 +405,12 @@ instruction:
 
     logoptype("IND_X", $1.base);
   }
-  | T_INSTR { loginstr("no value instr."); }
+  | T_INSTR {
+    currentBank->addByte($1.base);
+
+    logoptype("NO VALUE", $1.base);
+    cout << endl;
+  }
   | T_DATA
   | T_FILE
   | org {
