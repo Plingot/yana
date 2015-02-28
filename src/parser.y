@@ -58,7 +58,7 @@ unsigned short internalRS;
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
 %token T_X_REGISTER T_Y_REGISTER T_ACCUMULATOR
-%token T_RS_SET T_RS
+%token T_RS_SET T_RS T_EQU
 %token T_FILE_BINARY
 %token T_HIGH T_HIGH_IMM T_LOW T_LOW_IMM
 %token UNKNOWN
@@ -370,6 +370,18 @@ T_VARIABLE:
     internalRS += $3;
     cout << "Found variable [" << $1 << "] ref: " << hex(labelOffset) << endl;
     localSymbols.add($1, labelOffset);
+  }
+  | equ_variable
+  ;
+
+equ_variable:
+  T_FORWARD_SYMBOL T_EQU word {
+    cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
+    localSymbols.add($1, $3);
+  }
+  | T_FORWARD_SYMBOL T_EQU byte {
+    cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
+    localSymbols.add($1, $3);
   }
   ;
 

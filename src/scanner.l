@@ -73,6 +73,7 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 ,                      { return T_COMMA; }
 [\(\[]                 { return T_OPEN_PAREN; }
 [\)\]]                 { return T_CLOSE_PAREN; }
+=                      { return T_EQU; }
 
   /* ines header */
 \.inesprg              { return T_INES_PRG; }
