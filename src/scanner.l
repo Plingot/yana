@@ -87,6 +87,7 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 
   /* internal RS counter */
 \.rsset                { return T_RS_SET; }
+\.rs                   { return T_RS; }
 
   /* aaabbbcc opcodes - cc = 01 */
 ORA                    { opCC01(0); return T_INSTR_CC01; } /* 000 ORA */

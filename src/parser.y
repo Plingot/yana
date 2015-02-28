@@ -57,7 +57,7 @@ unsigned short internalRS;
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
 %token T_X_REGISTER T_Y_REGISTER T_ACCUMULATOR
-%token T_RS_SET
+%token T_RS_SET T_RS
 %token T_FILE_BINARY
 %token UNKNOWN
 
@@ -462,6 +462,12 @@ T_VARIABLE:
 
     cout << "Setting internal RS: ";
     logsymbol($2);
+  }
+  | T_FORWARD_SYMBOL T_RS T_BYTE {
+    unsigned short labelOffset = internalRS;
+    internalRS += $3;
+    cout << "Found variable [" << $1 << "] ref: " << hex(labelOffset) << endl;
+    localSymbols.add($1, labelOffset);
   }
   ;
 
