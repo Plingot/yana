@@ -215,7 +215,8 @@ A                      { return T_ACCUMULATOR; }
   symbol sym = localSymbols.find(yytext);
   if (!sym.name) {
     // Undefined symbol
-    return UNKNOWN;
+    yylval.c_str = strdup(yytext);
+    return T_FORWARD_SYMBOL;
   }
   yylval.sym = sym;
   return T_SYMBOL;

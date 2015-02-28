@@ -171,7 +171,6 @@ public:
     file.write((const char *)data.begin(), data.end() - data.begin());
   };
 
-protected:
   virtual void advance(short step) {
     _current += step;
     if (_current > data.end()) {
@@ -180,6 +179,8 @@ protected:
       _current = data.begin();
     }
   };
+
+protected:
   virtual unsigned char *begin() {
     return data.begin();
   };
