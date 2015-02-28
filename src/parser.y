@@ -74,7 +74,7 @@ unsigned short internalRS;
 %token <opcode> T_INSTR_IS
 %token <opcode> T_INSTR_REM
 %token <c_str> T_LABEL
-%token <sym> T_SYMBOL T_SYMBOL_IMM
+%token <sym> T_SYMBOL T_SYMBOL_BYTE T_SYMBOL_IMM T_SYMBOL_BYTE_IMM
 %token <c_str> T_FORWARD_SYMBOL T_FORWARD_SYMBOL_IMM
 %token <c_str> T_STRING_LITERAL
 
@@ -381,7 +381,7 @@ equ_variable:
   }
   | T_FORWARD_SYMBOL T_EQU byte {
     cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
-    localSymbols.add($1, $3);
+    localSymbols.addByte($1, $3);
   }
   ;
 
@@ -451,11 +451,15 @@ T_FILE:
 
 byte:
   T_BYTE
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
+  }
   | T_HIGH T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address >> 8);
   }
   | T_LOW T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
-    $$ = ($3.address | 0xff);
+    $$ = ($3.address & 0xff);
   }
   | T_HIGH T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
     // If forward_symbol is caught here, it will always have an instruction before it
@@ -475,11 +479,15 @@ byte:
 
 byte_imm:
   T_BYTE_IMM
+  | T_SYMBOL_BYTE_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
   | T_HIGH_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address >> 8);
   }
   | T_LOW_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
-    $$ = ($3.address | 0xff);
+    $$ = ($3.address & 0xff);
   }
   | T_HIGH_IMM T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
     // If forward_symbol is caught here, it will always have an instruction before it

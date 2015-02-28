@@ -6,9 +6,19 @@ void SymbolTable::add(string name, unsigned short address) {
   symbol s;
   s.name = strdup(name.c_str());
   s.address = address;
+  s.isByte = false;
 
   symbol_map[name] = s;
 }
+
+void SymbolTable::addByte(string name, unsigned short address) {
+  symbol s;
+  s.name = strdup(name.c_str());
+  s.address = address & 0xff;
+  s.isByte = true;
+
+  symbol_map[name] = s;
+};
 
 void SymbolTable::addForward(string name, unsigned char bankNo, unsigned short address, int lineNum, symbol_type type) {
   forward_symbol s;

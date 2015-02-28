@@ -234,7 +234,12 @@ LOW                    { return T_LOW; }
     return T_FORWARD_SYMBOL;
   }
   yylval.sym = sym;
-  return T_SYMBOL;
+
+  if (sym.isByte) {
+    return T_SYMBOL_BYTE;
+  } else {
+    return T_SYMBOL;
+  }
 };
 
 #{NAME}                {
@@ -246,7 +251,12 @@ LOW                    { return T_LOW; }
     return T_FORWARD_SYMBOL_IMM;
   }
   yylval.sym = sym;
-  return T_SYMBOL_IMM;
+
+  if (sym.isByte) {
+    return T_SYMBOL_BYTE_IMM;
+  } else {
+    return T_SYMBOL_IMM;
+  }
 };
 
 \n                     { ++line_num; }
