@@ -87,7 +87,27 @@ bool BankTable::updateForwardSymbols(SymbolTable &symbolTable) {
       Bank *bank = find(forward.bankNo);
       if (bank) {
         bank->advanceOffset(forward.address);
-        bank->addWord(sym.address);
+
+        switch(forward.type) {
+          case WORD:
+            bank->addWord(sym.address);
+            break;
+
+          case BYTE_HIGH:
+            bank->addByte(sym.address >> 8);
+            break;
+
+          case BYTE_LOW:
+            bank->addByte(sym.address | 0xff);
+            break;
+
+          default:
+            cerr << "error: Unhandled forward symbol type! [" << forward.type << "]" << endl;
+            cerr << "Referenced [" << forward.name << "] at line (" << forward.lineNum << ")." << endl;
+            return false;
+            break;
+        }
+
       } else {
         cerr << "error: Bank not found [" << (int)forward.bankNo << "]!" << endl;
         cerr << "Referenced [" << forward.name << "] at line (" << forward.lineNum << ")." << endl;

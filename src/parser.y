@@ -77,6 +77,8 @@ unsigned short internalRS;
 %token <c_str> T_FORWARD_SYMBOL
 %token <c_str> T_STRING_LITERAL
 
+%type <word> word
+%type <word> word_imm
 %type <byte> byte
 %type <byte> byte_imm
 %type <opcode> T_INSTR
@@ -186,7 +188,7 @@ bank_no:
   ;
 
 org:
-  T_ORG T_WORD { $$ = $2; }
+  T_ORG word { $$ = $2; }
   ;
 
 instructions:
@@ -209,7 +211,7 @@ instruction:
     logoptype("IMM", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_WORD_IMM {
+  | T_INSTR word_imm {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
 
     currentBank->addByte($1.base);
@@ -234,7 +236,7 @@ instruction:
       loginstr($2);
     }
   }
-  | T_INSTR T_WORD {
+  | T_INSTR word {
     if ($1.type == opcode_BRANCH) {
       unsigned short from = currentBank->currentOffset();
       char relative = branch_relative(from, $2);
@@ -256,43 +258,6 @@ instruction:
       loginstr($2);
     }
   }
-  | T_INSTR T_SYMBOL {
-    if ($1.type == opcode_BRANCH) {
-      unsigned short from = currentBank->currentOffset();
-      char relative = branch_relative(from, $2.address);
-
-      currentBank->addByte($1.base);
-      currentBank->addByte(relative);
-
-      logoptype("REL", $1.base);
-      loginstr(from);
-      logsymbol($2);
-      loginstr(relative);
-    } else {
-      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
-
-      currentBank->addByte($1.base);
-      currentBank->addWord($2.address);
-
-      logoptype("ABS", $1.base);
-      loginstr($2.address);
-      logsymbol($2);
-    }
-  }
-  | T_INSTR T_FORWARD_SYMBOL {
-    if ($1.type == opcode_BRANCH) {
-      yyerror("Branch to forward symbol not supported yet.");
-    } else {
-      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
-
-      currentBank->addByte($1.base);
-      localSymbols.addForward($2, currentBankNo, currentBank->currentOffset(), line_num);
-      currentBank->advance(2);
-
-      logoptype("ABS", $1.base);
-      logforwardsymbol($2);
-    }
-  }
   | T_INSTR byte T_COMMA T_X_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO_X);
 
@@ -302,7 +267,7 @@ instruction:
     logoptype("ZERO_X", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_WORD T_COMMA T_X_REGISTER {
+  | T_INSTR word T_COMMA T_X_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_X);
 
     currentBank->addByte($1.base);
@@ -311,27 +276,7 @@ instruction:
     logoptype("ABS_X", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_SYMBOL T_COMMA T_X_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_X);
-
-    currentBank->addByte($1.base);
-    currentBank->addWord($2.address);
-
-    logoptype("ABS_X", $1.base);
-    loginstr($2.address);
-    logsymbol($2);
-  }
-  | T_INSTR T_FORWARD_SYMBOL T_COMMA T_X_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_X);
-
-    currentBank->addByte($1.base);
-    localSymbols.addForward($2, currentBankNo, currentBank->currentOffset(), line_num);
-    currentBank->advance(2);
-
-    logoptype("ABS_X", $1.base);
-    logforwardsymbol($2);
-  }
-  | T_INSTR T_WORD T_COMMA T_Y_REGISTER {
+  | T_INSTR word T_COMMA T_Y_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_Y);
 
     currentBank->addByte($1.base);
@@ -340,27 +285,7 @@ instruction:
     logoptype("ABS_Y", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_SYMBOL T_COMMA T_Y_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_Y);
-
-    currentBank->addByte($1.base);
-    currentBank->addWord($2.address);
-
-    logoptype("ABS_Y", $1.base);
-    loginstr($2.address);
-    logsymbol($2);
-  }
-  | T_INSTR T_FORWARD_SYMBOL T_COMMA T_Y_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_Y);
-
-    currentBank->addByte($1.base);
-    localSymbols.addForward($2, currentBankNo, currentBank->currentOffset(), line_num);
-    currentBank->advance(2);
-
-    logoptype("ABS_Y", $1.base);
-    logforwardsymbol($2);
-  }
-  | T_INSTR T_OPEN_PAREN T_WORD T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
+  | T_INSTR T_OPEN_PAREN word T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_Y);
 
     currentBank->addByte($1.base);
@@ -369,27 +294,7 @@ instruction:
     logoptype("IND_Y", $1.base);
     loginstr($3);
   }
-  | T_INSTR T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_Y);
-
-    currentBank->addByte($1.base);
-    currentBank->addWord($3.address);
-
-    logoptype("IND_Y", $1.base);
-    loginstr($3.address);
-    logsymbol($3);
-  }
-  | T_INSTR T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_Y);
-
-    currentBank->addByte($1.base);
-    localSymbols.addForward($3, currentBankNo, currentBank->currentOffset(), line_num);
-    currentBank->advance(2);
-
-    logoptype("IND_Y", $1.base);
-    logforwardsymbol($3);
-  }
-  | T_INSTR T_OPEN_PAREN T_WORD T_COMMA T_X_REGISTER T_CLOSE_PAREN {
+  | T_INSTR T_OPEN_PAREN word T_COMMA T_X_REGISTER T_CLOSE_PAREN {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_X);
 
     currentBank->addByte($1.base);
@@ -397,26 +302,6 @@ instruction:
 
     logoptype("IND_X", $1.base);
     loginstr($3);
-  }
-  | T_INSTR T_OPEN_PAREN T_SYMBOL T_COMMA T_X_REGISTER T_CLOSE_PAREN {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_X);
-
-    currentBank->addByte($1.base);
-    currentBank->addWord($3.address);
-
-    logoptype("IND_X", $1.base);
-    loginstr($3.address);
-    logsymbol($3);
-  }
-  | T_INSTR T_OPEN_PAREN T_FORWARD_SYMBOL T_COMMA T_X_REGISTER T_CLOSE_PAREN {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_X);
-
-    currentBank->addByte($1.base);
-    localSymbols.addForward($3, currentBankNo, currentBank->currentOffset(), line_num);
-    currentBank->advance(2);
-
-    logoptype("IND_X", $1.base);
-    logforwardsymbol($3);
   }
   | T_INSTR {
     currentBank->addByte($1.base);
@@ -450,7 +335,7 @@ variables:
   ;
 
 T_VARIABLE:
-  T_RS_SET T_WORD {
+  T_RS_SET word {
     internalRS = $2;
 
     cout << "Setting internal RS: " << hex($2) << endl;
@@ -476,29 +361,16 @@ T_VARIABLE:
 
 T_DATA:
   T_DATA_WORD { cout << "word data: " << endl; } T_WORDS
-  | T_DATA_WORD T_SYMBOL {
-    currentBank->addWord($2.address);
-
-    cout << "word data: " << endl;
-    logsymbol($2);
-  }
-  | T_DATA_WORD T_FORWARD_SYMBOL {
-    localSymbols.addForward($2, currentBankNo, currentBank->currentOffset(), line_num);
-    currentBank->advance(2);
-
-    cout << "word data: ";
-    logforwardsymbol($2);
-  }
   | T_DATA_BYTE { cout << "byte data: " << endl; } T_BYTES
   ;
 
 T_WORDS:
-  T_WORDS T_WORD {
+  T_WORDS word {
     currentBank->addWord($2);
 
     cout << hex($2) << endl;
   }
-  | T_WORDS T_COMMA T_WORD {
+  | T_WORDS T_COMMA word {
     currentBank->addWord($3);
 
     cout << hex($3) << endl;
@@ -513,7 +385,7 @@ T_WORDS:
 
     cout << hex($3) << endl;
   }
-  | T_WORD {
+  | word {
     currentBank->addWord($1);
 
     cout << hex($1) << endl;
@@ -559,6 +431,20 @@ byte:
   | T_LOW T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address | 0xff);
   }
+  | T_HIGH T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForwardHigh($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($3);
+    $$ = 0xff;
+  }
+  | T_LOW T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForwardLow($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($3);
+    $$ = 0xff;
+  }
   ;
 
 byte_imm:
@@ -569,6 +455,40 @@ byte_imm:
   | T_LOW_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address | 0xff);
   }
+  | T_HIGH_IMM T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForwardHigh($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($3);
+    $$ = 0xff;
+  }
+  | T_LOW_IMM T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForwardLow($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($3);
+    $$ = 0xff;
+  }
+  ;
+
+word:
+  T_WORD
+  | T_FORWARD_SYMBOL {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForward($1, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($1);
+    $$ = 0xffff;
+  }
+  | T_SYMBOL {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  ;
+
+word_imm:
+  T_WORD_IMM
+  ;
 
 %%
 
