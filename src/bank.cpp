@@ -5,6 +5,7 @@
 #include <iterator>
 #include <map>
 #include "bank.h"
+#include "opcodes.h"
 
 using namespace std;
 
@@ -99,6 +100,10 @@ bool BankTable::updateForwardSymbols(SymbolTable &symbolTable) {
 
           case BYTE_LOW:
             bank->addByte(sym.address | 0xff);
+            break;
+
+          case BYTE_REL:
+            bank->addByte(branch_relative(forward.address - 1, sym.address));
             break;
 
           default:

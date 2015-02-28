@@ -13,7 +13,7 @@ struct less_string {
   }
 };
 
-enum symbol_type{WORD, BYTE_HIGH, BYTE_LOW};
+enum symbol_type{WORD, BYTE_HIGH, BYTE_LOW, BYTE_REL};
 
 struct symbol {
   const char *name;
@@ -35,9 +35,11 @@ public:
   void addForward(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardHigh(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardLow(string name, unsigned char bankNo, unsigned short address, int lineNum);
+  void addForwardRel(string name, unsigned char bankNo, unsigned short address, int lineNum);
   vector<forward_symbol>::iterator forward_symbols_begin();
   vector<forward_symbol>::iterator forward_symbols_end();
   symbol find(string name);
+  bool setForwardRel(int lineNum);
 
 private:
   void addForward(string name, unsigned char bankNo, unsigned short address, int lineNum, symbol_type type);

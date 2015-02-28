@@ -23,31 +23,37 @@ inline unsigned char branch_base(unsigned char base) {
 inline void opCC01(unsigned char base) {
   yylval.opcode.type = opcode_CC01;
   yylval.opcode.base = aaabbbcc_base(1, base);
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opCC10(unsigned char base) {
   yylval.opcode.type = opcode_CC10;
   yylval.opcode.base = aaabbbcc_base(2, base);
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opCC00(unsigned char base) {
   yylval.opcode.type = opcode_CC00;
   yylval.opcode.base = aaabbbcc_base(0, base);
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opBRA(unsigned char base) {
   yylval.opcode.type = opcode_BRANCH;
   yylval.opcode.base = branch_base(base);
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opIS(unsigned char base) {
   yylval.opcode.type = opcode_IS;
   yylval.opcode.base = base;
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opREM(unsigned char base) {
   yylval.opcode.type = opcode_REM;
   yylval.opcode.base = base;
+  yylval.opcode.lineNum = line_num;
 }
 
 %}

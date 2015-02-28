@@ -33,6 +33,10 @@ void SymbolTable::addForwardLow(string name, unsigned char bankNo, unsigned shor
   addForward(name, bankNo, address, lineNum, BYTE_LOW);
 }
 
+void SymbolTable::addForwardRel(string name, unsigned char bankNo, unsigned short address, int lineNum) {
+  addForward(name, bankNo, address, lineNum, BYTE_REL);
+}
+
 vector<forward_symbol>::iterator SymbolTable::forward_symbols_begin() {
   return forward_symbols.begin();
 }
@@ -48,4 +52,15 @@ symbol SymbolTable::find(string name) {
     return symbol{};
   }
   return it->second;
+}
+
+bool SymbolTable::setForwardRel(int lineNum) {
+  vector<forward_symbol>::iterator it;
+  for (it = forward_symbols.begin(); it != forward_symbols.end(); ++it) {
+    if (it->lineNum == lineNum) {
+      it->type = BYTE_REL;
+      return true;
+    }
+  }
+  return false;
 }

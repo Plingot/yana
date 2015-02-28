@@ -46,6 +46,7 @@ unsigned short internalRS;
   struct opcode {
     unsigned char type;
     unsigned char base;
+    int lineNum;
   } opcode;
 
   const char *c_str;
@@ -240,6 +241,11 @@ instruction:
     if ($1.type == opcode_BRANCH) {
       unsigned short from = currentBank->currentOffset();
       char relative = branch_relative(from, $2);
+
+      // Check if we have a forward symbol to update
+      if (localSymbols.setForwardRel($1.lineNum)) {
+        relative = 0xff;
+      }
 
       currentBank->addByte($1.base);
       currentBank->addByte(relative);
