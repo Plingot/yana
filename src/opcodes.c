@@ -21,7 +21,7 @@ unsigned char opcode_set_addr_mode(unsigned char group, unsigned char base, unsi
 }
 
 unsigned char opcode_bbb_set_addr_mode(unsigned char base, unsigned char addr_mode) {
-  addr_mode = addr_mode | 0x7;
+  addr_mode = addr_mode & 0x7;
   return base | (addr_mode << 2);
 }
 
