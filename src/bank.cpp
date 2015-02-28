@@ -35,6 +35,7 @@ void Bank::addWord(unsigned short word) {
 
 void Bank::addBinary(const char *fileName) {
   ifstream file(fileName, ios::binary);
+  noskipws(file);
   istream_iterator<unsigned char> its(file), end;
 
   for (; its != end; its++) {
