@@ -199,6 +199,10 @@ A                      { return T_ACCUMULATOR; }
   yylval.word = val;
   return T_WORD_IMM;
 };
+HIGH                   { return T_HIGH; }
+LOW                    { return T_LOW; }
+#HIGH                  { return T_HIGH_IMM; }
+#LOW                   { return T_LOW_IMM; }
 \"[^"]*\"              { //" <- syntax highlighting fix
   /* String literal */
 

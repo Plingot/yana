@@ -59,6 +59,7 @@ unsigned short internalRS;
 %token T_X_REGISTER T_Y_REGISTER T_ACCUMULATOR
 %token T_RS_SET T_RS
 %token T_FILE_BINARY
+%token T_HIGH T_HIGH_IMM T_LOW T_LOW_IMM
 %token UNKNOWN
 
 %token <byte> T_BYTE_IMM
@@ -76,6 +77,8 @@ unsigned short internalRS;
 %token <c_str> T_FORWARD_SYMBOL
 %token <c_str> T_STRING_LITERAL
 
+%type <byte> byte
+%type <byte> byte_imm
 %type <opcode> T_INSTR
 %type <word> org
 %type <byte> bank_header
@@ -101,17 +104,17 @@ ines_entries:
   ;
 
 ines_entry:
-  T_INES_PRG T_BYTE {
+  T_INES_PRG byte {
     inesHeader.setPRGRomSize($2);
 
     cout << dec($2) << " program banks." << endl;
   }
-  | T_INES_CHR T_BYTE {
+  | T_INES_CHR byte {
     inesHeader.setCHRRomSize($2);
 
     cout << dec($2) << " chr banks." << endl;
   }
-  | T_INES_MIR T_BYTE {
+  | T_INES_MIR byte {
     inesHeader.setMirroringNESASM($2);
 
     cout << inesHeader.mirroring() << " mirroring mode." << endl;
@@ -122,7 +125,7 @@ ines_entry:
       cout << "With trainer." << endl;
     }
   }
-  | T_INES_MAP T_BYTE {
+  | T_INES_MAP byte {
     inesHeader.setMapper($2);
 
     cout << dec($2) << " mapper." << endl;
@@ -176,7 +179,7 @@ bank_header:
   ;
 
 bank_no:
-  T_BANK T_BYTE {
+  T_BANK byte {
     cout << "Starting bank " << dec($2) << endl;
     $$ = $2;
   }
@@ -197,7 +200,7 @@ instruction:
     cout << "Found label [" << $1 << "] ref: " << hex(labelOffset) << endl;
     localSymbols.add($1, labelOffset);
   }
-  | T_INSTR T_BYTE_IMM {
+  | T_INSTR byte_imm {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
 
     currentBank->addByte($1.base);
@@ -215,7 +218,7 @@ instruction:
     logoptype("IMM", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_BYTE {
+  | T_INSTR byte {
     if ($1.type == opcode_BRANCH) {
       currentBank->addByte($1.base);
       currentBank->addByte($2);
@@ -290,7 +293,7 @@ instruction:
       logforwardsymbol($2);
     }
   }
-  | T_INSTR T_BYTE T_COMMA T_X_REGISTER {
+  | T_INSTR byte T_COMMA T_X_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO_X);
 
     currentBank->addByte($1.base);
@@ -452,7 +455,7 @@ T_VARIABLE:
 
     cout << "Setting internal RS: " << hex($2) << endl;
   }
-  | T_RS_SET T_BYTE {
+  | T_RS_SET byte {
     internalRS = $2;
 
     cout << "Setting internal RS: " << hex($2) << endl;
@@ -463,7 +466,7 @@ T_VARIABLE:
     cout << "Setting internal RS: ";
     logsymbol($2);
   }
-  | T_FORWARD_SYMBOL T_RS T_BYTE {
+  | T_FORWARD_SYMBOL T_RS byte {
     unsigned short labelOffset = internalRS;
     internalRS += $3;
     cout << "Found variable [" << $1 << "] ref: " << hex(labelOffset) << endl;
@@ -500,12 +503,12 @@ T_WORDS:
 
     cout << hex($3) << endl;
   }
-  | T_WORDS T_BYTE {
+  | T_WORDS byte {
     currentBank->addWord($2);
 
     cout << hex($2) << endl;
   }
-  | T_WORDS T_COMMA T_BYTE {
+  | T_WORDS T_COMMA byte {
     currentBank->addWord($3);
 
     cout << hex($3) << endl;
@@ -515,7 +518,7 @@ T_WORDS:
 
     cout << hex($1) << endl;
   }
-  | T_BYTE {
+  | byte {
     currentBank->addWord($1);
 
     cout << hex($1) << endl;
@@ -523,17 +526,17 @@ T_WORDS:
   ;
 
 T_BYTES:
-  T_BYTES T_BYTE {
+  T_BYTES byte {
     currentBank->addByte($2);
 
     cout << hex($2) << endl;
   }
-  | T_BYTES T_COMMA T_BYTE {
+  | T_BYTES T_COMMA byte {
     currentBank->addByte($3);
 
     cout << hex($3) << endl;
   }
-  | T_BYTE {
+  | byte {
     currentBank->addByte($1);
 
     cout << hex($1) << endl;
@@ -547,6 +550,25 @@ T_FILE:
     cout << "Adding binary: " << $2 << endl;
   }
   ;
+
+byte:
+  T_BYTE
+  | T_HIGH T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address >> 8);
+  }
+  | T_LOW T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address | 0xff);
+  }
+  ;
+
+byte_imm:
+  T_BYTE_IMM
+  | T_HIGH_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address >> 8);
+  }
+  | T_LOW_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address | 0xff);
+  }
 
 %%
 
