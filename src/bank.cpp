@@ -5,6 +5,7 @@
 #include <iterator>
 #include <map>
 #include "bank.h"
+#include "opcodes.h"
 
 using namespace std;
 
@@ -34,6 +35,7 @@ void Bank::addWord(unsigned short word) {
 
 void Bank::addBinary(const char *fileName) {
   ifstream file(fileName, ios::binary);
+  noskipws(file);
   istream_iterator<unsigned char> its(file), end;
 
   for (; its != end; its++) {
@@ -87,7 +89,31 @@ bool BankTable::updateForwardSymbols(SymbolTable &symbolTable) {
       Bank *bank = find(forward.bankNo);
       if (bank) {
         bank->advanceOffset(forward.address);
-        bank->addWord(sym.address);
+
+        switch(forward.type) {
+          case WORD:
+            bank->addWord(sym.address);
+            break;
+
+          case BYTE_HIGH:
+            bank->addByte(sym.address >> 8);
+            break;
+
+          case BYTE_LOW:
+            bank->addByte(sym.address | 0xff);
+            break;
+
+          case BYTE_REL:
+            bank->addByte(branch_relative(forward.address - 1, sym.address));
+            break;
+
+          default:
+            cerr << "error: Unhandled forward symbol type! [" << forward.type << "]" << endl;
+            cerr << "Referenced [" << forward.name << "] at line (" << forward.lineNum << ")." << endl;
+            return false;
+            break;
+        }
+
       } else {
         cerr << "error: Bank not found [" << (int)forward.bankNo << "]!" << endl;
         cerr << "Referenced [" << forward.name << "] at line (" << forward.lineNum << ")." << endl;
