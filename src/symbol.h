@@ -13,7 +13,7 @@ struct less_string {
   }
 };
 
-enum symbol_type{WORD, BYTE_HIGH, BYTE_LOW, BYTE_REL};
+enum symbol_type{WORD, BYTE, BYTE_HIGH, BYTE_LOW, BYTE_REL};
 
 struct symbol {
   const char *name;
@@ -33,6 +33,7 @@ class SymbolTable {
 public:
   void add(string name, unsigned short address);
   void addForward(string name, unsigned char bankNo, unsigned short address, int lineNum);
+  void addForwardByte(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardHigh(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardLow(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardRel(string name, unsigned char bankNo, unsigned short address, int lineNum);

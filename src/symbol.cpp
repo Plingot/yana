@@ -25,6 +25,10 @@ void SymbolTable::addForward(string name, unsigned char bankNo, unsigned short a
   addForward(name, bankNo, address, lineNum, WORD);
 }
 
+void SymbolTable::addForwardByte(string name, unsigned char bankNo, unsigned short address, int lineNum) {
+  addForward(name, bankNo, address, lineNum, BYTE);
+}
+
 void SymbolTable::addForwardHigh(string name, unsigned char bankNo, unsigned short address, int lineNum) {
   addForward(name, bankNo, address, lineNum, BYTE_HIGH);
 }
