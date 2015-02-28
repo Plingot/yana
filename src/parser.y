@@ -309,6 +309,14 @@ instruction:
     logoptype("IND_X", $1.base);
     loginstr($3);
   }
+  | T_INSTR T_ACCUMULATOR {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ACC);
+
+    currentBank->addByte($1.base);
+
+    logoptype("ACC", $1.base);
+    cout << endl;
+  }
   | T_INSTR {
     currentBank->addByte($1.base);
 

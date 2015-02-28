@@ -21,6 +21,7 @@ unsigned char opcode_set_addr_mode(unsigned char group, unsigned char base, unsi
 }
 
 unsigned char opcode_bbb_set_addr_mode(unsigned char base, unsigned char addr_mode) {
+  addr_mode = addr_mode | 0x7;
   return base | (addr_mode << 2);
 }
 
@@ -42,7 +43,7 @@ unsigned char opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_m
   /*
   000 #immediate
   001 zero page
-  010 accumulator   - 65C02 only. not NES
+  010 accumulator
   011 absolute
   101 zero page,X
   111 absolute,X
@@ -54,6 +55,10 @@ unsigned char opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_m
 
     case mode_ZERO:
       cc10_addr_mode = 0x1;
+      break;
+
+    case mode_ACC:
+      cc10_addr_mode = 0x2;
       break;
 
     case mode_ABS:
