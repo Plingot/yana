@@ -289,7 +289,7 @@ instruction:
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_Y);
 
     currentBank->addByte($1.base);
-    currentBank->addWord($3);
+    currentBank->addByte($3);
 
     logoptype("IND_Y", $1.base);
     loginstr($3);
