@@ -237,5 +237,17 @@ LOW                    { return T_LOW; }
   return T_SYMBOL;
 };
 
+#{NAME}                {
+  /* Name reference - immediate */
+  symbol sym = localSymbols.find(yytext + 1);
+  if (!sym.name) {
+    // Undefined symbol
+    yylval.c_str = strdup(yytext + 1);
+    return T_FORWARD_SYMBOL_IMM;
+  }
+  yylval.sym = sym;
+  return T_SYMBOL_IMM;
+};
+
 \n                     { ++line_num; }
 %%

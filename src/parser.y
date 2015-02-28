@@ -74,8 +74,8 @@ unsigned short internalRS;
 %token <opcode> T_INSTR_IS
 %token <opcode> T_INSTR_REM
 %token <c_str> T_LABEL
-%token <sym> T_SYMBOL
-%token <c_str> T_FORWARD_SYMBOL
+%token <sym> T_SYMBOL T_SYMBOL_IMM
+%token <c_str> T_FORWARD_SYMBOL T_FORWARD_SYMBOL_IMM
 %token <c_str> T_STRING_LITERAL
 
 %type <word> word
@@ -514,6 +514,17 @@ word:
 
 word_imm:
   T_WORD_IMM
+  | T_FORWARD_SYMBOL_IMM {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForward($1, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($1);
+    $$ = 0xffff;
+  }
+  | T_SYMBOL_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
   ;
 
 %%
