@@ -133,4 +133,4 @@ Loop:
 
 	.bank 2
 	.org	$0000
-	.incbin	"test.chr"		; gotta be 8192 bytes long
+	.incbin	"simple.chr"		; gotta be 8192 bytes long

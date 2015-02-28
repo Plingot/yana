@@ -1,6 +1,6 @@
 CXXFLAGS=-std=c++0x -stdlib=libc++ -Wno-deprecated-register
 
-SAMPLES=test.asm sprites.asm
+SAMPLES=simple.asm sprites.asm
 BINARIES=$(SAMPLES:.asm=.nes)
 CMP_BINARIES=$(BINARIES:.nes=)
 
