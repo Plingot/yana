@@ -85,6 +85,9 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
   /* file includes */
 \.incbin               { return T_FILE_BINARY; }
 
+  /* internal RS counter */
+\.rsset                { return T_RS_SET; }
+
   /* aaabbbcc opcodes - cc = 01 */
 ORA                    { opCC01(0); return T_INSTR_CC01; } /* 000 ORA */
 AND                    { opCC01(1); return T_INSTR_CC01; } /* 001 AND */

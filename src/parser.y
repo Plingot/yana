@@ -35,6 +35,7 @@ BankFactory bankFactory;
 typedef unique_ptr<Bank> BankPtr;
 BankPtr currentBank;
 unsigned char currentBankNo;
+unsigned short internalRS;
 
 %}
 
@@ -56,6 +57,7 @@ unsigned char currentBankNo;
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
 %token T_X_REGISTER T_Y_REGISTER T_ACCUMULATOR
+%token T_RS_SET
 %token T_FILE_BINARY
 %token UNKNOWN
 
@@ -129,7 +131,9 @@ ines_entry:
 
 banks:
   banks bank
+  | banks variables
   | bank
+  | variables
   ;
 
 bank:
@@ -424,6 +428,7 @@ instruction:
 
     cout << "Moving to address: " << hex($1) << endl;
   }
+  | variables
   | UNKNOWN { yyerror("Unknown instruction"); }
   ;
 
@@ -434,6 +439,30 @@ T_INSTR:
   | T_INSTR_BRA  { logoptype("BRANCH", $1.base); }
   | T_INSTR_IS   { logoptype("IS",     $1.base); }
   | T_INSTR_REM  { logoptype("REM",    $1.base); }
+  ;
+
+variables:
+  variables T_VARIABLE
+  | T_VARIABLE
+  ;
+
+T_VARIABLE:
+  T_RS_SET T_WORD {
+    internalRS = $2;
+
+    cout << "Setting internal RS: " << hex($2) << endl;
+  }
+  | T_RS_SET T_BYTE {
+    internalRS = $2;
+
+    cout << "Setting internal RS: " << hex($2) << endl;
+  }
+  | T_RS_SET T_SYMBOL {
+    internalRS = $2.address;
+
+    cout << "Setting internal RS: ";
+    logsymbol($2);
+  }
   ;
 
 T_DATA:
