@@ -95,10 +95,6 @@ bool BankTable::updateForwardSymbols(SymbolTable &symbolTable) {
             bank->addWord(sym.address);
             break;
 
-          case BYTE:
-            bank->addByte(sym.address & 0xff);
-            break;
-
           case BYTE_HIGH:
             bank->addByte(sym.address >> 8);
             break;
