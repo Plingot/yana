@@ -58,7 +58,7 @@ unsigned short internalRS;
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
 %token T_X_REGISTER T_Y_REGISTER T_ACCUMULATOR
-%token T_RS_SET T_RS
+%token T_RS_SET T_RS T_EQU
 %token T_FILE_BINARY
 %token T_HIGH T_HIGH_IMM T_LOW T_LOW_IMM
 %token UNKNOWN
@@ -74,8 +74,8 @@ unsigned short internalRS;
 %token <opcode> T_INSTR_IS
 %token <opcode> T_INSTR_REM
 %token <c_str> T_LABEL
-%token <sym> T_SYMBOL
-%token <c_str> T_FORWARD_SYMBOL
+%token <sym> T_SYMBOL T_SYMBOL_BYTE T_SYMBOL_IMM T_SYMBOL_BYTE_IMM
+%token <c_str> T_FORWARD_SYMBOL T_FORWARD_SYMBOL_IMM
 %token <c_str> T_STRING_LITERAL
 
 %type <word> word
@@ -309,6 +309,14 @@ instruction:
     logoptype("IND_X", $1.base);
     loginstr($3);
   }
+  | T_INSTR T_ACCUMULATOR {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ACC);
+
+    currentBank->addByte($1.base);
+
+    logoptype("ACC", $1.base);
+    cout << endl;
+  }
   | T_INSTR {
     currentBank->addByte($1.base);
 
@@ -362,6 +370,18 @@ T_VARIABLE:
     internalRS += $3;
     cout << "Found variable [" << $1 << "] ref: " << hex(labelOffset) << endl;
     localSymbols.add($1, labelOffset);
+  }
+  | equ_variable
+  ;
+
+equ_variable:
+  T_FORWARD_SYMBOL T_EQU word {
+    cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
+    localSymbols.add($1, $3);
+  }
+  | T_FORWARD_SYMBOL T_EQU byte {
+    cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
+    localSymbols.addByte($1, $3);
   }
   ;
 
@@ -431,11 +451,15 @@ T_FILE:
 
 byte:
   T_BYTE
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
+  }
   | T_HIGH T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address >> 8);
   }
   | T_LOW T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
-    $$ = ($3.address | 0xff);
+    $$ = ($3.address & 0xff);
   }
   | T_HIGH T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
     // If forward_symbol is caught here, it will always have an instruction before it
@@ -455,11 +479,15 @@ byte:
 
 byte_imm:
   T_BYTE_IMM
+  | T_SYMBOL_BYTE_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
   | T_HIGH_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address >> 8);
   }
   | T_LOW_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
-    $$ = ($3.address | 0xff);
+    $$ = ($3.address & 0xff);
   }
   | T_HIGH_IMM T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
     // If forward_symbol is caught here, it will always have an instruction before it
@@ -494,6 +522,17 @@ word:
 
 word_imm:
   T_WORD_IMM
+  | T_FORWARD_SYMBOL_IMM {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForward($1, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($1);
+    $$ = 0xffff;
+  }
+  | T_SYMBOL_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
   ;
 
 %%

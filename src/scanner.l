@@ -73,6 +73,7 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 ,                      { return T_COMMA; }
 [\(\[]                 { return T_OPEN_PAREN; }
 [\)\]]                 { return T_CLOSE_PAREN; }
+=                      { return T_EQU; }
 
   /* ines header */
 \.inesprg              { return T_INES_PRG; }
@@ -233,7 +234,29 @@ LOW                    { return T_LOW; }
     return T_FORWARD_SYMBOL;
   }
   yylval.sym = sym;
-  return T_SYMBOL;
+
+  if (sym.isByte) {
+    return T_SYMBOL_BYTE;
+  } else {
+    return T_SYMBOL;
+  }
+};
+
+#{NAME}                {
+  /* Name reference - immediate */
+  symbol sym = localSymbols.find(yytext + 1);
+  if (!sym.name) {
+    // Undefined symbol
+    yylval.c_str = strdup(yytext + 1);
+    return T_FORWARD_SYMBOL_IMM;
+  }
+  yylval.sym = sym;
+
+  if (sym.isByte) {
+    return T_SYMBOL_BYTE_IMM;
+  } else {
+    return T_SYMBOL_IMM;
+  }
 };
 
 \n                     { ++line_num; }

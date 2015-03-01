@@ -100,7 +100,7 @@ bool BankTable::updateForwardSymbols(SymbolTable &symbolTable) {
             break;
 
           case BYTE_LOW:
-            bank->addByte(sym.address | 0xff);
+            bank->addByte(sym.address & 0xff);
             break;
 
           case BYTE_REL:

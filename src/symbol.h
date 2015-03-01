@@ -18,6 +18,7 @@ enum symbol_type{WORD, BYTE_HIGH, BYTE_LOW, BYTE_REL};
 struct symbol {
   const char *name;
   unsigned short address;
+  bool isByte;
 };
 
 struct forward_symbol {
@@ -32,6 +33,7 @@ class SymbolTable {
 
 public:
   void add(string name, unsigned short address);
+  void addByte(string name, unsigned short address);
   void addForward(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardHigh(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardLow(string name, unsigned char bankNo, unsigned short address, int lineNum);
