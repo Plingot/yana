@@ -4,6 +4,7 @@
 #include <array>
 #include <map>
 #include <fstream>
+#include "symbol.h"
 
 using namespace std;
 
@@ -29,11 +30,11 @@ public:
     advance(relative);
     cout << "Advanced $" << hex << relative << " steps, to: $" << hex << currentOffset() << endl;
   };
+  virtual void advance(short step) = 0;
 
   virtual void write(fstream &file) = 0;
 
 protected:
-  virtual void advance(short step) = 0;
   virtual unsigned char *begin() = 0;
   virtual unsigned char *current() = 0;
   virtual unsigned char *last() = 0;
@@ -52,7 +53,6 @@ public:
   };
   ~Bank8() {};
 
-protected:
   virtual void advance(short step) {
     _current += step;
     if (_current > data.end()) {
@@ -61,6 +61,8 @@ protected:
       _current = data.begin();
     }
   };
+
+protected:
   virtual unsigned char *begin() {
     return data.begin();
   };
@@ -91,7 +93,6 @@ public:
   };
   ~Bank16() {};
 
-protected:
   virtual void advance(short step) {
     _current += step;
     if (_current > data.end()) {
@@ -100,6 +101,8 @@ protected:
       _current = data.begin();
     }
   };
+
+protected:
   virtual unsigned char *begin() {
     return data.begin();
   };
@@ -148,15 +151,12 @@ public:
   }
 };
 
-struct less_num {
-
-};
-
 class BankTable {
 public:
   void add(unsigned int number, unique_ptr<Bank> bank);
   Bank *find(unsigned int number);
   void write(fstream &file);
+  bool updateForwardSymbols(SymbolTable &symbolTable);
 
 private:
   map<unsigned int, unique_ptr<Bank> > bank_map;

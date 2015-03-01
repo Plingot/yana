@@ -11,14 +11,15 @@
 
 // Address modes
 /*
-000 (zero page,X)  - Indirect X
-001 zero page      - Zero page
-010 #immediate     - Immediate
-011 absolute       - Absolute
-100 (zero page),Y  - Indirect Y
-101 zero page,X    - Zero page X
-110 absolute,Y     - Absolute Y
-111 absolute,X     - Absolute X
+0000  (zero page,X)  - Indirect X
+0001  zero page      - Zero page
+0010  #immediate     - Immediate
+0011  absolute       - Absolute
+0100  (zero page),Y  - Indirect Y
+0101  zero page,X    - Zero page X
+0110  absolute,Y     - Absolute Y
+0111  absolute,X     - Absolute X
+1000  accumulator    - Accumulator - only CC10
  */
 
 #define mode_IND_X  0x00
@@ -29,6 +30,7 @@
 #define mode_ZERO_X 0x05
 #define mode_ABS_Y  0x06
 #define mode_ABS_X  0x07
+#define mode_ACC    0x08
 
 unsigned char opcode_set_addr_mode(unsigned char group, unsigned char base, unsigned char addr_mode);
 unsigned char opcode_CC01_set_addr_mode(unsigned char base, unsigned char addr_mode);

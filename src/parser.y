@@ -25,13 +25,17 @@ void logaddrmode(const char *mode);
 void loginstr(unsigned int c);
 void loginstr(const char *s);
 void logsymbol(symbol s);
+void logforwardsymbol(const char *s);
 void yyerror(const char *s);
 
+extern BankTable bankTable;
+extern InesHeader inesHeader;
+
 BankFactory bankFactory;
-BankTable bankTable;
 typedef unique_ptr<Bank> BankPtr;
 BankPtr currentBank;
-InesHeader inesHeader;
+unsigned char currentBankNo;
+unsigned short internalRS;
 
 %}
 
@@ -42,6 +46,7 @@ InesHeader inesHeader;
   struct opcode {
     unsigned char type;
     unsigned char base;
+    int lineNum;
   } opcode;
 
   const char *c_str;
@@ -53,7 +58,9 @@ InesHeader inesHeader;
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
 %token T_X_REGISTER T_Y_REGISTER T_ACCUMULATOR
+%token T_RS_SET T_RS T_EQU
 %token T_FILE_BINARY
+%token T_HIGH T_HIGH_IMM T_LOW T_LOW_IMM
 %token UNKNOWN
 
 %token <byte> T_BYTE_IMM
@@ -67,9 +74,14 @@ InesHeader inesHeader;
 %token <opcode> T_INSTR_IS
 %token <opcode> T_INSTR_REM
 %token <c_str> T_LABEL
-%token <sym> T_SYMBOL
+%token <sym> T_SYMBOL T_SYMBOL_BYTE T_SYMBOL_IMM T_SYMBOL_BYTE_IMM
+%token <c_str> T_FORWARD_SYMBOL T_FORWARD_SYMBOL_IMM
 %token <c_str> T_STRING_LITERAL
 
+%type <word> word
+%type <word> word_imm
+%type <byte> byte
+%type <byte> byte_imm
 %type <opcode> T_INSTR
 %type <word> org
 %type <byte> bank_header
@@ -77,11 +89,16 @@ InesHeader inesHeader;
 
 %%
 program:
-  ines_header { inesHeader.printData(); } banks
+  ines_header banks {
+    cout << "Update forward symbols." << endl;
+    if (!bankTable.updateForwardSymbols(localSymbols)) {
+      yyerror("Failed to update forward symbols.");
+    }
+  }
   ;
 
 ines_header:
-  ines_entries
+  ines_entries { inesHeader.printData(); }
   ;
 
 ines_entries:
@@ -90,17 +107,17 @@ ines_entries:
   ;
 
 ines_entry:
-  T_INES_PRG T_BYTE {
+  T_INES_PRG byte {
     inesHeader.setPRGRomSize($2);
 
     cout << dec($2) << " program banks." << endl;
   }
-  | T_INES_CHR T_BYTE {
+  | T_INES_CHR byte {
     inesHeader.setCHRRomSize($2);
 
     cout << dec($2) << " chr banks." << endl;
   }
-  | T_INES_MIR T_BYTE {
+  | T_INES_MIR byte {
     inesHeader.setMirroringNESASM($2);
 
     cout << inesHeader.mirroring() << " mirroring mode." << endl;
@@ -111,7 +128,7 @@ ines_entry:
       cout << "With trainer." << endl;
     }
   }
-  | T_INES_MAP T_BYTE {
+  | T_INES_MAP byte {
     inesHeader.setMapper($2);
 
     cout << dec($2) << " mapper." << endl;
@@ -120,7 +137,9 @@ ines_entry:
 
 banks:
   banks bank
+  | banks variables
   | bank
+  | variables
   ;
 
 bank:
@@ -140,37 +159,37 @@ bank_header:
       type = CHR;
     }
 
+    currentBankNo = $1;
     currentBank = bankFactory.createBank(type, $2);
-    $$ = $1;
+    $$ = currentBankNo;
 
     cout << "Bank start: " << hex(currentBank->bankOffset()) << endl;
   }
   | org bank_no {
-    if ($2 >= inesHeader.romBanks()) {
-      yyerror("Attempting to create bank that's not specified in the ines headers.");
-    }
+    // TODO: Check that we're not trying to create more banks than specified
 
     bank_type type = PRG;
     if ($2 >= inesHeader.prgRomSize()) {
       type = CHR;
     }
 
+    currentBankNo = $2;
     currentBank = bankFactory.createBank(type, $1);
-    $$ = $2;
+    $$ = currentBankNo;
 
     cout << "Bank start: " << hex(currentBank->bankOffset()) << endl;
   }
   ;
 
 bank_no:
-  T_BANK T_BYTE {
+  T_BANK byte {
     cout << "Starting bank " << dec($2) << endl;
     $$ = $2;
   }
   ;
 
 org:
-  T_ORG T_WORD { $$ = $2; }
+  T_ORG word { $$ = $2; }
   ;
 
 instructions:
@@ -184,7 +203,7 @@ instruction:
     cout << "Found label [" << $1 << "] ref: " << hex(labelOffset) << endl;
     localSymbols.add($1, labelOffset);
   }
-  | T_INSTR T_BYTE_IMM {
+  | T_INSTR byte_imm {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
 
     currentBank->addByte($1.base);
@@ -193,7 +212,7 @@ instruction:
     logoptype("IMM", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_WORD_IMM {
+  | T_INSTR word_imm {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
 
     currentBank->addByte($1.base);
@@ -202,7 +221,7 @@ instruction:
     logoptype("IMM", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_BYTE {
+  | T_INSTR byte {
     if ($1.type == opcode_BRANCH) {
       currentBank->addByte($1.base);
       currentBank->addByte($2);
@@ -218,10 +237,15 @@ instruction:
       loginstr($2);
     }
   }
-  | T_INSTR T_WORD {
+  | T_INSTR word {
     if ($1.type == opcode_BRANCH) {
       unsigned short from = currentBank->currentOffset();
       char relative = branch_relative(from, $2);
+
+      // Check if we have a forward symbol to update
+      if (localSymbols.setForwardRel($1.lineNum)) {
+        relative = 0xff;
+      }
 
       currentBank->addByte($1.base);
       currentBank->addByte(relative);
@@ -240,30 +264,7 @@ instruction:
       loginstr($2);
     }
   }
-  | T_INSTR T_SYMBOL {
-    if ($1.type == opcode_BRANCH) {
-      unsigned short from = currentBank->currentOffset();
-      char relative = branch_relative(from, $2.address);
-
-      currentBank->addByte($1.base);
-      currentBank->addByte(relative);
-
-      logoptype("REL", $1.base);
-      loginstr(from);
-      logsymbol($2);
-      loginstr(relative);
-    } else {
-      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
-
-      currentBank->addByte($1.base);
-      currentBank->addWord($2.address);
-
-      logoptype("ABS", $1.base);
-      loginstr($2.address);
-      logsymbol($2);
-    }
-  }
-  | T_INSTR T_BYTE T_COMMA T_X_REGISTER {
+  | T_INSTR byte T_COMMA T_X_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO_X);
 
     currentBank->addByte($1.base);
@@ -272,7 +273,7 @@ instruction:
     logoptype("ZERO_X", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_WORD T_COMMA T_X_REGISTER {
+  | T_INSTR word T_COMMA T_X_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_X);
 
     currentBank->addByte($1.base);
@@ -281,7 +282,7 @@ instruction:
     logoptype("ABS_X", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_WORD T_COMMA T_Y_REGISTER {
+  | T_INSTR word T_COMMA T_Y_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_Y);
 
     currentBank->addByte($1.base);
@@ -290,16 +291,16 @@ instruction:
     logoptype("ABS_Y", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_OPEN_PAREN T_WORD T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
+  | T_INSTR T_OPEN_PAREN word T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_Y);
 
     currentBank->addByte($1.base);
-    currentBank->addWord($3);
+    currentBank->addByte($3);
 
     logoptype("IND_Y", $1.base);
     loginstr($3);
   }
-  | T_INSTR T_OPEN_PAREN T_WORD T_COMMA T_X_REGISTER T_CLOSE_PAREN {
+  | T_INSTR T_OPEN_PAREN word T_COMMA T_X_REGISTER T_CLOSE_PAREN {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_X);
 
     currentBank->addByte($1.base);
@@ -308,7 +309,20 @@ instruction:
     logoptype("IND_X", $1.base);
     loginstr($3);
   }
-  | T_INSTR { loginstr("no value instr."); }
+  | T_INSTR T_ACCUMULATOR {
+    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ACC);
+
+    currentBank->addByte($1.base);
+
+    logoptype("ACC", $1.base);
+    cout << endl;
+  }
+  | T_INSTR {
+    currentBank->addByte($1.base);
+
+    logoptype("NO VALUE", $1.base);
+    cout << endl;
+  }
   | T_DATA
   | T_FILE
   | org {
@@ -316,6 +330,7 @@ instruction:
 
     cout << "Moving to address: " << hex($1) << endl;
   }
+  | variables
   | UNKNOWN { yyerror("Unknown instruction"); }
   ;
 
@@ -328,46 +343,98 @@ T_INSTR:
   | T_INSTR_REM  { logoptype("REM",    $1.base); }
   ;
 
-T_DATA:
-  T_DATA_WORD { cout << "word data: " << endl; } T_WORDS
-  | T_DATA_WORD T_SYMBOL {
-    currentBank->addWord($2.address);
+variables:
+  variables T_VARIABLE
+  | T_VARIABLE
+  ;
 
-    cout << "word data: " << endl;
+T_VARIABLE:
+  T_RS_SET word {
+    internalRS = $2;
+
+    cout << "Setting internal RS: " << hex($2) << endl;
+  }
+  | T_RS_SET byte {
+    internalRS = $2;
+
+    cout << "Setting internal RS: " << hex($2) << endl;
+  }
+  | T_RS_SET T_SYMBOL {
+    internalRS = $2.address;
+
+    cout << "Setting internal RS: ";
     logsymbol($2);
   }
+  | T_FORWARD_SYMBOL T_RS byte {
+    unsigned short labelOffset = internalRS;
+    internalRS += $3;
+    cout << "Found variable [" << $1 << "] ref: " << hex(labelOffset) << endl;
+    localSymbols.add($1, labelOffset);
+  }
+  | equ_variable
+  ;
+
+equ_variable:
+  T_FORWARD_SYMBOL T_EQU word {
+    cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
+    localSymbols.add($1, $3);
+  }
+  | T_FORWARD_SYMBOL T_EQU byte {
+    cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
+    localSymbols.addByte($1, $3);
+  }
+  ;
+
+T_DATA:
+  T_DATA_WORD { cout << "word data: " << endl; } T_WORDS
   | T_DATA_BYTE { cout << "byte data: " << endl; } T_BYTES
   ;
 
 T_WORDS:
-  T_WORDS T_WORD {
+  T_WORDS word {
     currentBank->addWord($2);
 
     cout << hex($2) << endl;
   }
-  | T_WORDS T_BYTE {
+  | T_WORDS T_COMMA word {
+    currentBank->addWord($3);
+
+    cout << hex($3) << endl;
+  }
+  | T_WORDS byte {
     currentBank->addWord($2);
 
     cout << hex($2) << endl;
   }
-  | T_WORD {
+  | T_WORDS T_COMMA byte {
+    currentBank->addWord($3);
+
+    cout << hex($3) << endl;
+  }
+  | word {
     currentBank->addWord($1);
 
     cout << hex($1) << endl;
   }
-  | T_BYTE {
+  | byte {
     currentBank->addWord($1);
 
     cout << hex($1) << endl;
   }
+  ;
 
 T_BYTES:
-  T_BYTES T_BYTE {
+  T_BYTES byte {
     currentBank->addByte($2);
 
     cout << hex($2) << endl;
   }
-  | T_BYTE {
+  | T_BYTES T_COMMA byte {
+    currentBank->addByte($3);
+
+    cout << hex($3) << endl;
+  }
+  | byte {
     currentBank->addByte($1);
 
     cout << hex($1) << endl;
@@ -382,32 +449,93 @@ T_FILE:
   }
   ;
 
-%%
-
-int main() {
-  const char *fileName = "test.asm";
-
-  // open a file handle to a particular file:
-  FILE *myfile = fopen(fileName, "r");
-  // make sure it's valid:
-  if (!myfile) {
-    cout << "I can't open " << fileName << " file!" << endl;
-    return -1;
+byte:
+  T_BYTE
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
   }
-  // set flex to read from it instead of defaulting to STDIN:
-  yyin = myfile;
+  | T_HIGH T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address >> 8);
+  }
+  | T_LOW T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address & 0xff);
+  }
+  | T_HIGH T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForwardHigh($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($3);
+    $$ = 0xff;
+  }
+  | T_LOW T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForwardLow($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($3);
+    $$ = 0xff;
+  }
+  ;
 
-  // parse through the input until there is no more:
-  do {
-    yyparse();
-  } while (!feof(yyin));
+byte_imm:
+  T_BYTE_IMM
+  | T_SYMBOL_BYTE_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_HIGH_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address >> 8);
+  }
+  | T_LOW_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address & 0xff);
+  }
+  | T_HIGH_IMM T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForwardHigh($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($3);
+    $$ = 0xff;
+  }
+  | T_LOW_IMM T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForwardLow($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($3);
+    $$ = 0xff;
+  }
+  ;
 
-  // write the assembled binary
-  fstream binary = fstream("test.nes", ios::out | ios::binary);
-  inesHeader.write(binary);
-  bankTable.write(binary);
-  binary.close();
-}
+word:
+  T_WORD
+  | T_FORWARD_SYMBOL {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForward($1, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($1);
+    $$ = 0xffff;
+  }
+  | T_SYMBOL {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  ;
+
+word_imm:
+  T_WORD_IMM
+  | T_FORWARD_SYMBOL_IMM {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addForward($1, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($1);
+    $$ = 0xffff;
+  }
+  | T_SYMBOL_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  ;
+
+%%
 
 string hex(unsigned int c) {
   ostringstream stm;
@@ -430,7 +558,7 @@ void logaddrmode(const char *mode) {
 }
 
 void logline() {
-  cout << "(" << line_num << ")\t";
+  cout << "(" << dec(line_num) << ")\t";
 }
 
 void loginstr(unsigned int c) {
@@ -448,8 +576,13 @@ void logsymbol(symbol s) {
   cout << "Symbol [" << s.name << "] = " << hex(s.address) << endl;
 }
 
+void logforwardsymbol(const char *s) {
+  logline();
+  cout << "Forward symbol [" << s << "]" << endl;
+}
+
 void yyerror(const char *s) {
-  cout << "Error on line (" << line_num << "): " << s << endl;
+  cout << "Error on line (" << dec(line_num) << "): " << s << endl;
   cout << "\nAborting!\n" << endl;
   exit(-1);
 }

@@ -23,31 +23,37 @@ inline unsigned char branch_base(unsigned char base) {
 inline void opCC01(unsigned char base) {
   yylval.opcode.type = opcode_CC01;
   yylval.opcode.base = aaabbbcc_base(1, base);
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opCC10(unsigned char base) {
   yylval.opcode.type = opcode_CC10;
   yylval.opcode.base = aaabbbcc_base(2, base);
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opCC00(unsigned char base) {
   yylval.opcode.type = opcode_CC00;
   yylval.opcode.base = aaabbbcc_base(0, base);
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opBRA(unsigned char base) {
   yylval.opcode.type = opcode_BRANCH;
   yylval.opcode.base = branch_base(base);
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opIS(unsigned char base) {
   yylval.opcode.type = opcode_IS;
   yylval.opcode.base = base;
+  yylval.opcode.lineNum = line_num;
 }
 
 inline void opREM(unsigned char base) {
   yylval.opcode.type = opcode_REM;
   yylval.opcode.base = base;
+  yylval.opcode.lineNum = line_num;
 }
 
 %}
@@ -65,8 +71,9 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 [ \t]                  ;
 
 ,                      { return T_COMMA; }
-\(                     { return T_OPEN_PAREN; }
-\)                     { return T_CLOSE_PAREN; }
+[\(\[]                 { return T_OPEN_PAREN; }
+[\)\]]                 { return T_CLOSE_PAREN; }
+=                      { return T_EQU; }
 
   /* ines header */
 \.inesprg              { return T_INES_PRG; }
@@ -84,6 +91,10 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 
   /* file includes */
 \.incbin               { return T_FILE_BINARY; }
+
+  /* internal RS counter */
+\.rsset                { return T_RS_SET; }
+\.rs                   { return T_RS; }
 
   /* aaabbbcc opcodes - cc = 01 */
 ORA                    { opCC01(0); return T_INSTR_CC01; } /* 000 ORA */
@@ -195,6 +206,10 @@ A                      { return T_ACCUMULATOR; }
   yylval.word = val;
   return T_WORD_IMM;
 };
+HIGH                   { return T_HIGH; }
+LOW                    { return T_LOW; }
+#HIGH                  { return T_HIGH_IMM; }
+#LOW                   { return T_LOW_IMM; }
 \"[^"]*\"              { //" <- syntax highlighting fix
   /* String literal */
 
@@ -215,10 +230,33 @@ A                      { return T_ACCUMULATOR; }
   symbol sym = localSymbols.find(yytext);
   if (!sym.name) {
     // Undefined symbol
-    return UNKNOWN;
+    yylval.c_str = strdup(yytext);
+    return T_FORWARD_SYMBOL;
   }
   yylval.sym = sym;
-  return T_SYMBOL;
+
+  if (sym.isByte) {
+    return T_SYMBOL_BYTE;
+  } else {
+    return T_SYMBOL;
+  }
+};
+
+#{NAME}                {
+  /* Name reference - immediate */
+  symbol sym = localSymbols.find(yytext + 1);
+  if (!sym.name) {
+    // Undefined symbol
+    yylval.c_str = strdup(yytext + 1);
+    return T_FORWARD_SYMBOL_IMM;
+  }
+  yylval.sym = sym;
+
+  if (sym.isByte) {
+    return T_SYMBOL_BYTE_IMM;
+  } else {
+    return T_SYMBOL_IMM;
+  }
 };
 
 \n                     { ++line_num; }
