@@ -12,13 +12,13 @@ test: default $(CMP_BINARIES)
 	cmp $^ $@_nesasm.nes
 
 %.nes: %.asm
-	./yana -o $@ $<
+	../bin/yana -o $@ $<
 
 clean:
-	rm -f yana parser.c parser.h scanner.cpp $(BINARIES)
+	rm -f ../bin/yana parser.c parser.h scanner.cpp $(BINARIES)
 
 yana: main.cpp opcodes.c parser.c scanner.cpp symbol.cpp bank.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o ../bin/$@ $^
 
 parser.c: parser.y
 	bison -o $@ -d $^
