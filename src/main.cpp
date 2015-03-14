@@ -6,9 +6,19 @@
 
 BankTable bankTable;
 InesHeader inesHeader;
+string asmPath;
 
 extern "C" int yyparse();
 extern "C" FILE *yyin;
+
+using namespace std;
+
+string getDirname(const char *fileName) {
+  string str = string(fileName);
+  size_t found;
+  found = str.find_last_of("/\\");
+  return str.substr(0, found);
+}
 
 void printUsage() {
   cout << "usage: yana [-o|--output[=<outfile>]] <infile>" << endl << endl;
@@ -79,6 +89,7 @@ int main(int argc, char *argv[]) {
   char *inFile = NULL;
   char *outFile = NULL;
   readArguments(argc, argv, &inFile, &outFile);
+  asmPath = getDirname(inFile);
   parseAsm(inFile);
   writeBinary(outFile);
 }

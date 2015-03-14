@@ -26,10 +26,12 @@ void loginstr(unsigned int c);
 void loginstr(const char *s);
 void logsymbol(symbol s);
 void logforwardsymbol(const char *s);
+string prefixPath(string path, const char *fileName);
 void yyerror(const char *s);
 
 extern BankTable bankTable;
 extern InesHeader inesHeader;
+extern string asmPath;
 
 BankFactory bankFactory;
 typedef unique_ptr<Bank> BankPtr;
@@ -443,9 +445,10 @@ T_BYTES:
 
 T_FILE:
   T_FILE_BINARY T_STRING_LITERAL {
-    currentBank->addBinary($2);
+    string fullPath = prefixPath(asmPath, $2);
+    currentBank->addBinary(fullPath.c_str());
 
-    cout << "Adding binary: " << $2 << endl;
+    cout << "Adding binary: " << fullPath << endl;
   }
   ;
 
@@ -579,6 +582,10 @@ void logsymbol(symbol s) {
 void logforwardsymbol(const char *s) {
   logline();
   cout << "Forward symbol [" << s << "]" << endl;
+}
+
+string prefixPath(string path, const char *fileName) {
+  return path + "/" + string(fileName);
 }
 
 void yyerror(const char *s) {
