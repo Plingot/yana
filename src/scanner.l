@@ -76,6 +76,7 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 =                      { return T_EQU; }
 equ                    { return T_EQU; }
 &                      { return T_BITWISE_AND; }
+>>                     { return T_BITWISE_SHR; }
 
   /* ines header */
 \.inesprg              { return T_INES_PRG; }
