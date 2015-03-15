@@ -61,6 +61,7 @@ unsigned short internalRS;
 %token T_DATA_WORD T_DATA_BYTE
 %token T_X_REGISTER T_Y_REGISTER T_ACCUMULATOR
 %token T_RS_SET T_RS T_EQU
+%token T_BITWISE_AND
 %token T_FILE_BINARY
 %token T_HIGH T_HIGH_IMM T_LOW T_LOW_IMM
 %token UNKNOWN
@@ -84,6 +85,7 @@ unsigned short internalRS;
 %type <word> word_imm
 %type <byte> byte
 %type <byte> byte_imm
+%type <word> T_WORD_EXPRESSION
 %type <opcode> T_INSTR
 %type <word> org
 %type <byte> bank_header
@@ -509,7 +511,7 @@ byte_imm:
   ;
 
 word:
-  T_WORD
+  T_WORD_EXPRESSION
   | T_FORWARD_SYMBOL {
     // If forward_symbol is caught here, it will always have an instruction before it
     // That's why we add 1 to the currentOffset.
@@ -535,6 +537,25 @@ word_imm:
   | T_SYMBOL_IMM {
     logsymbol($1);
     $$ = $1.address;
+  }
+  ;
+
+T_WORD_EXPRESSION:
+  T_WORD {
+    $$ = $1;
+  }
+  | T_BYTE {
+    $$ = $1;
+  }
+  | T_SYMBOL {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_OPEN_PAREN T_WORD_EXPRESSION T_CLOSE_PAREN {
+    $$ = $2;
+  }
+  | T_WORD_EXPRESSION T_BITWISE_AND T_WORD_EXPRESSION {
+    $$ = $1 & $3;
   }
   ;
 
