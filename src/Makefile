@@ -13,6 +13,9 @@ test: default $(CMP_BINARIES)
 %: %.nes
 	cmp $^ $(TESTDIR)/$@_nesasm.nes
 
+lan_master.nes: $(TESTDIR)/lan_master_src/game.asm
+	$(BINDIR)/yana -o $@ $<
+
 %.nes: $(TESTDIR)/%.asm
 	$(BINDIR)/yana -o $@ $<
 
