@@ -393,8 +393,11 @@ equ_variable:
 
 T_DEFINE:
   T_FORWARD_SYMBOL {
-    cout << "Found define [" << $1 << "]" << endl;
-    localSymbols.add($1, 0);
+    // Store currentOffset if it's actually a label
+    // without (:) colon (defines don't need value).
+    unsigned short labelOffset = currentBank->currentOffset();
+    cout << "Found define [" << $1 << "] ref: " << hex(labelOffset) << endl;
+    localSymbols.add($1, labelOffset);
   }
   ;
 
