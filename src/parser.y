@@ -349,7 +349,9 @@ T_INSTR:
 
 variables:
   variables T_VARIABLE
+  | variables T_DEFINE
   | T_VARIABLE
+  | T_DEFINE
   ;
 
 T_VARIABLE:
@@ -386,6 +388,13 @@ equ_variable:
   | T_FORWARD_SYMBOL T_EQU byte {
     cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
     localSymbols.addByte($1, $3);
+  }
+  ;
+
+T_DEFINE:
+  T_FORWARD_SYMBOL {
+    cout << "Found define [" << $1 << "]" << endl;
+    localSymbols.add($1, 0);
   }
   ;
 
