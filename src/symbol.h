@@ -33,6 +33,7 @@ class SymbolTable {
 
 public:
   void add(string name, unsigned short address);
+  void addLocal(unsigned char ref, unsigned short address);
   void addByte(string name, unsigned short address);
   void addForward(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardHigh(string name, unsigned char bankNo, unsigned short address, int lineNum);
@@ -41,6 +42,7 @@ public:
   vector<forward_symbol>::iterator forward_symbols_begin();
   vector<forward_symbol>::iterator forward_symbols_end();
   symbol find(string name);
+  symbol findLocal(unsigned char ref);
   bool setForwardRel(int lineNum);
 
 private:

@@ -11,6 +11,8 @@ using namespace std;
 int line_num = 1;
 SymbolTable localSymbols;
 
+extern void yyerror(const char *s);
+
 inline unsigned char aaabbbcc_base(unsigned char type, unsigned char base) {
   return (base << 5) | type;
 }
@@ -261,6 +263,31 @@ LOW                    { return T_LOW; }
     return T_SYMBOL_IMM;
   }
 };
+
+^\.[0-9]+               {
+  /* Branch label */
+  unsigned short val = strtol(yytext + 1, 0, 10);
+  yylval.byte = (unsigned char)(val & 0xFF);
+  return T_BRANCH_LABEL;
+}
+
+\.[0-9]+               {
+  /* Branch label ref */
+  unsigned char ref = (strtol(yytext + 1, 0, 10) & 0xFF);
+
+  symbol sym = localSymbols.findLocal(ref);
+  if (!sym.name) {
+    // Undefined local branch - throw error
+    // yyerror("Found undefined local branch label.");
+  }
+  yylval.sym = sym;
+
+  if (sym.isByte) {
+    return T_SYMBOL_BYTE;
+  } else {
+    return T_SYMBOL;
+  }
+}
 
 \n                     { ++line_num; }
 %%

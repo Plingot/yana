@@ -2,6 +2,12 @@
 
 using namespace std;
 
+const char *localRef(unsigned char ref) {
+  char name[100];
+  sprintf(name, "local_%d", ref);
+  return strdup(name);
+}
+
 void SymbolTable::add(string name, unsigned short address) {
   symbol s;
   s.name = strdup(name.c_str());
@@ -9,6 +15,10 @@ void SymbolTable::add(string name, unsigned short address) {
   s.isByte = false;
 
   symbol_map[name] = s;
+}
+
+void SymbolTable::addLocal(unsigned char ref, unsigned short address) {
+  add(localRef(ref), address);
 }
 
 void SymbolTable::addByte(string name, unsigned short address) {
@@ -62,6 +72,10 @@ symbol SymbolTable::find(string name) {
     return symbol{};
   }
   return it->second;
+}
+
+symbol SymbolTable::findLocal(unsigned char ref) {
+  return find(localRef(ref));
 }
 
 bool SymbolTable::setForwardRel(int lineNum) {

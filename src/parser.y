@@ -77,6 +77,7 @@ unsigned short internalRS;
 %token <opcode> T_INSTR_IS
 %token <opcode> T_INSTR_REM
 %token <c_str> T_LABEL
+%token <byte> T_BRANCH_LABEL
 %token <sym> T_SYMBOL T_SYMBOL_BYTE T_SYMBOL_IMM T_SYMBOL_BYTE_IMM
 %token <c_str> T_FORWARD_SYMBOL T_FORWARD_SYMBOL_IMM
 %token <c_str> T_STRING_LITERAL
@@ -206,6 +207,11 @@ instruction:
     unsigned short labelOffset = currentBank->currentOffset();
     cout << "Found label [" << $1 << "] ref: " << hex(labelOffset) << endl;
     localSymbols.add($1, labelOffset);
+  }
+  | T_BRANCH_LABEL {
+    unsigned short labelOffset = currentBank->currentOffset();
+    cout << "Found branch label [" << hex($1) << "] ref: " << hex(labelOffset) << endl;
+    localSymbols.addLocal($1, labelOffset);
   }
   | T_INSTR byte_imm {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
