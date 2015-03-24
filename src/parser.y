@@ -87,6 +87,7 @@ unsigned short internalRS;
 %type <byte> byte
 %type <byte> byte_imm
 %type <word> T_WORD_EXPRESSION
+%type <byte> T_BYTE_EXPRESSION
 %type <opcode> T_INSTR
 %type <word> org
 %type <byte> bank_header
@@ -473,30 +474,44 @@ T_FILE:
   ;
 
 byte:
-  T_BYTE
+  T_BYTE_EXPRESSION
   | T_SYMBOL_BYTE {
     logsymbol($1);
     $$ = $1.address;
   }
-  | T_HIGH T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
-    $$ = ($3.address >> 8);
+  ;
+
+T_BYTE_EXPRESSION:
+  T_BYTE {
+    cout << "BYTE" << endl;
+    $$ = $1;
   }
-  | T_LOW T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
-    $$ = ($3.address & 0xff);
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
   }
-  | T_HIGH T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
-    // If forward_symbol is caught here, it will always have an instruction before it
-    // That's why we add 1 to the currentOffset.
-    localSymbols.addForwardHigh($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
-    logforwardsymbol($3);
-    $$ = 0xff;
+  | T_OPEN_PAREN T_BYTE_EXPRESSION T_CLOSE_PAREN {
+    $$ = $2;
   }
-  | T_LOW T_OPEN_PAREN T_FORWARD_SYMBOL T_CLOSE_PAREN {
-    // If forward_symbol is caught here, it will always have an instruction before it
-    // That's why we add 1 to the currentOffset.
-    localSymbols.addForwardLow($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
-    logforwardsymbol($3);
-    $$ = 0xff;
+  | T_BYTE_EXPRESSION T_BITWISE_AND T_BYTE_EXPRESSION {
+    $$ = $1 & $3;
+  }
+  | T_BYTE_EXPRESSION T_BITWISE_SHR T_BYTE_EXPRESSION {
+    $$ = $1 >> $3;
+  }
+  | T_BYTE_EXPRESSION T_ADD T_BYTE_EXPRESSION {
+    $$ = $1 + $3;
+    cout << dec($1) << " + " << dec($3) << " = " << dec($$) << endl;
+  }
+  | T_BYTE_EXPRESSION T_SUB T_BYTE_EXPRESSION {
+    $$ = $1 - $3;
+    cout << dec($1) << " - " << dec($3) << " = " << dec($$) << endl;
+  }
+  | T_HIGH T_OPEN_PAREN T_WORD_EXPRESSION T_CLOSE_PAREN {
+    $$ = ($3 >> 8);
+  }
+  | T_LOW T_OPEN_PAREN T_WORD_EXPRESSION T_CLOSE_PAREN {
+    $$ = ($3 & 0xff);
   }
   ;
 
