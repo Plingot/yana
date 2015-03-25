@@ -279,8 +279,9 @@ LOW                    { return T_LOW; }
 
   symbol sym = localSymbols.findLocal(ref);
   if (!sym.name) {
-    // Undefined local branch - throw error
-    // yyerror("Found undefined local branch label.");
+    // Undefined symbol
+    yylval.byte = ref;
+    return T_FORWARD_SYMBOL_BRANCH;
   }
   yylval.sym = sym;
 

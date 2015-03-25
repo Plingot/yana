@@ -25,6 +25,7 @@ void logaddrmode(const char *mode);
 void loginstr(unsigned int c);
 void loginstr(const char *s);
 void logsymbol(symbol s);
+void loglocalforwardsymbol(unsigned char ref);
 void logforwardsymbol(const char *s);
 string prefixPath(string path, const char *fileName);
 void yyerror(const char *s);
@@ -80,6 +81,7 @@ unsigned short internalRS;
 %token <byte> T_BRANCH_LABEL
 %token <sym> T_SYMBOL T_SYMBOL_BYTE T_SYMBOL_IMM T_SYMBOL_BYTE_IMM
 %token <c_str> T_FORWARD_SYMBOL T_FORWARD_SYMBOL_IMM
+%token <byte> T_FORWARD_SYMBOL_BRANCH
 %token <c_str> T_STRING_LITERAL
 
 %type <word> word
@@ -486,6 +488,13 @@ T_BYTE_EXPRESSION:
     cout << "BYTE" << endl;
     $$ = $1;
   }
+  | T_FORWARD_SYMBOL_BRANCH {
+    // If forward_symbol is caught here, it will always have an instruction before it
+    // That's why we add 1 to the currentOffset.
+    localSymbols.addLocalForwardRel($1, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    loglocalforwardsymbol($1);
+    $$ = 0xff;
+  }
   | T_SYMBOL_BYTE {
     logsymbol($1);
     $$ = $1.address;
@@ -640,6 +649,11 @@ void loginstr(const char *s) {
 void logsymbol(symbol s) {
   logline();
   cout << "Symbol [" << s.name << "] = " << hex(s.address) << endl;
+}
+
+void loglocalforwardsymbol(unsigned char ref) {
+  logline();
+  cout << "Forward branch symbol [." << dec(ref) << "]" << endl;
 }
 
 void logforwardsymbol(const char *s) {

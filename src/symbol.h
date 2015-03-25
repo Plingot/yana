@@ -39,6 +39,7 @@ public:
   void addForwardHigh(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardLow(string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardRel(string name, unsigned char bankNo, unsigned short address, int lineNum);
+  void addLocalForwardRel(unsigned char ref, unsigned char bankNo, unsigned short address, int lineNum);
   vector<forward_symbol>::iterator forward_symbols_begin();
   vector<forward_symbol>::iterator forward_symbols_end();
   symbol find(string name);

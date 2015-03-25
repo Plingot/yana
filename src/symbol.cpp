@@ -57,6 +57,10 @@ void SymbolTable::addForwardRel(string name, unsigned char bankNo, unsigned shor
   addForward(name, bankNo, address, lineNum, BYTE_REL);
 }
 
+void SymbolTable::addLocalForwardRel(unsigned char ref, unsigned char bankNo, unsigned short address, int lineNum) {
+  addForward(localRef(ref), bankNo, address, lineNum, BYTE_REL);
+}
+
 vector<forward_symbol>::iterator SymbolTable::forward_symbols_begin() {
   return forward_symbols.begin();
 }
