@@ -266,14 +266,14 @@ LOW                    { return T_LOW; }
   }
 };
 
-^\.[0-9]+               {
+^\.[0-9a-zA-Z]+         {
   /* Branch label */
   unsigned short val = strtol(yytext + 1, 0, 10);
   yylval.byte = (unsigned char)(val & 0xFF);
   return T_BRANCH_LABEL;
 }
 
-\.[0-9]+               {
+\.[0-9a-zA-Z]+          {
   /* Branch label ref */
   unsigned char ref = (strtol(yytext + 1, 0, 10) & 0xFF);
 
