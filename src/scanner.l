@@ -78,6 +78,7 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 =                      { return T_EQU; }
 equ                    { return T_EQU; }
 &                      { return T_BITWISE_AND; }
+\|                     { return T_BITWISE_OR; }
 >>                     { return T_BITWISE_SHR; }
 \+                     { return T_ADD; }
 -                      { return T_SUB; }
