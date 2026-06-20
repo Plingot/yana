@@ -106,6 +106,7 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 \.inesflags7           { return T_INES_FLAGS7; }
 \.inesflags9           { return T_INES_FLAGS9; }
 \.inesflags10          { return T_INES_FLAGS10; }
+\.inestrainer          { return T_INES_TRAINER; }
 
   /* bank handling */
 \.bank                 { return T_BANK; }

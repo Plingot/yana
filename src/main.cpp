@@ -102,6 +102,9 @@ void writeBinary(const std::string &outFile) {
   }
 
   inesHeader.write(binary);
+  if (inesHeader.trainer()) {
+    inesHeader.writeTrainer(binary);
+  }
   bankTable.write(binary);
 
   if (!binary) {

@@ -553,3 +553,37 @@ TEST_CASE("inesflags9 and inesflags10 directives set NES 2.0 header bytes",
   std::remove(asm_path.c_str());
   std::remove(output_path.c_str());
 }
+
+TEST_CASE("inestrainer directive writes 512-byte trainer section after header",
+          "[integration][assembly]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_trainer.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_trainer.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n";
+    output << ".inestrainer \"HELLO\"\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n";
+    output << "NOP\n";
+  }
+
+  const ProcessResult result =
+      run_yana({"-o", ".yana_test_trainer.nes", ".yana_test_trainer.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 16 + 512 + 1);
+  REQUIRE((static_cast<unsigned char>(rom[6]) & 0x04) != 0);
+  REQUIRE(rom.substr(16, 5) == "HELLO");
+  REQUIRE(static_cast<unsigned char>(rom[16 + 512]) == 0xEA);  // NOP opcode
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}
