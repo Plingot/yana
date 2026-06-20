@@ -2,21 +2,19 @@ CXXFLAGS=-std=c++0x -stdlib=libc++ -Wno-deprecated-register
 
 SAMPLES=simple.asm sprites.asm sprites2.asm background3.asm pong2.asm controller.asm scrolling5.asm
 BINARIES=$(SAMPLES:.asm=.nes)
-CMP_BINARIES=$(BINARIES:.nes=)
 
 default: clean yana
 
-test: default $(CMP_BINARIES)
+test: run_tests.sh
+	@chmod +x run_tests.sh
+	@./run_tests.sh
 
-test-negative: yana
-	chmod +x negative/run_negative_tests.sh
-	./negative/run_negative_tests.sh
+test-negative: yana negative/run_negative_tests.sh
+	@chmod +x negative/run_negative_tests.sh
+	@./negative/run_negative_tests.sh
 
 %.nes: %.asm
 	./yana -o $@ $<
-
-%: %.nes
-	cmp $^ $@_nesasm.nes
 
 clean:
 	rm -f yana parser.c parser.h scanner.cpp $(BINARIES)

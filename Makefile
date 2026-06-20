@@ -1,4 +1,4 @@
 default: clean yana
 
 %:
-	cd src/ ; make $@
+	@$(MAKE) --no-print-directory -C src/ $@
