@@ -177,3 +177,11 @@ TEST_CASE("word expressions support add/subtract with parentheses",
   std::remove(asm_path.c_str());
   std::remove(output_path.c_str());
 }
+
+TEST_CASE("invalid addressing mode is rejected", "[integration][negative]") {
+  expect_assembler_failure({"-o", ".yana_test_addr_mode.nes", "negative/invalid_addr_mode.asm"});
+}
+
+TEST_CASE("immediate value out of range is rejected", "[integration][negative]") {
+  expect_assembler_failure({"-o", ".yana_test_immediate.nes", "negative/invalid_immediate.asm"});
+}

@@ -32,10 +32,11 @@
 #define mode_ABS_X  0x07
 #define mode_ACC    0x08
 
-unsigned char opcode_set_addr_mode(unsigned char group, unsigned char base, unsigned char addr_mode);
-unsigned char opcode_CC01_set_addr_mode(unsigned char base, unsigned char addr_mode);
-unsigned char opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_mode);
-unsigned char opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_mode);
+int opcode_set_addr_mode(unsigned char group, unsigned char base, unsigned char addr_mode,
+                         unsigned char *out);
+int opcode_CC01_set_addr_mode(unsigned char base, unsigned char addr_mode, unsigned char *out);
+int opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_mode, unsigned char *out);
+int opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_mode, unsigned char *out);
 
 int branch_relative(unsigned short from, unsigned short to, char *out);
 

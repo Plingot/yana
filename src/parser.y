@@ -24,6 +24,14 @@ void logsymbol(symbol s);
 void logforwardsymbol(const char *s);
 void yyerror(const char *s);
 
+#define ENCODE_ADDR_MODE(op, mode) \
+  do { \
+    if (!opcode_set_addr_mode((op).type, (op).base, (mode), &(op).base)) { \
+      yyerror("Invalid addressing mode for instruction"); \
+      YYABORT; \
+    } \
+  } while (0)
+
 extern BankTable bankTable;
 extern InesHeader inesHeader;
 
@@ -189,7 +197,7 @@ instruction:
     localSymbols.add($1, labelOffset);
   }
   | T_INSTR byte_imm {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
+    ENCODE_ADDR_MODE($1, mode_IMM);
 
     currentBank->addByte($1.base);
     currentBank->addByte($2);
@@ -198,10 +206,14 @@ instruction:
     loginstr($2);
   }
   | T_INSTR word_imm {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IMM);
+    if ($2 > 0xFF) {
+      yyerror("Immediate value must be a byte");
+      YYABORT;
+    }
+    ENCODE_ADDR_MODE($1, mode_IMM);
 
     currentBank->addByte($1.base);
-    currentBank->addWord($2);
+    currentBank->addByte($2);
 
     logoptype("IMM", $1.base);
     loginstr($2);
@@ -214,7 +226,7 @@ instruction:
       logoptype("REL", $1.base);
       loginstr($2);
     } else {
-      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO);
+      ENCODE_ADDR_MODE($1, mode_ZERO);
       currentBank->addByte($1.base);
       currentBank->addByte($2);
 
@@ -243,7 +255,7 @@ instruction:
       loginstr($2);
       loginstr(relative);
     } else {
-      $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS);
+      ENCODE_ADDR_MODE($1, mode_ABS);
 
       currentBank->addByte($1.base);
       currentBank->addWord($2);
@@ -253,7 +265,7 @@ instruction:
     }
   }
   | T_INSTR byte T_COMMA T_X_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ZERO_X);
+    ENCODE_ADDR_MODE($1, mode_ZERO_X);
 
     currentBank->addByte($1.base);
     currentBank->addByte($2);
@@ -262,7 +274,7 @@ instruction:
     loginstr($2);
   }
   | T_INSTR word T_COMMA T_X_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_X);
+    ENCODE_ADDR_MODE($1, mode_ABS_X);
 
     currentBank->addByte($1.base);
     currentBank->addWord($2);
@@ -271,7 +283,7 @@ instruction:
     loginstr($2);
   }
   | T_INSTR word T_COMMA T_Y_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ABS_Y);
+    ENCODE_ADDR_MODE($1, mode_ABS_Y);
 
     currentBank->addByte($1.base);
     currentBank->addWord($2);
@@ -280,7 +292,7 @@ instruction:
     loginstr($2);
   }
   | T_INSTR T_OPEN_PAREN zp_byte T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_Y);
+    ENCODE_ADDR_MODE($1, mode_IND_Y);
 
     currentBank->addByte($1.base);
     currentBank->addByte($3);
@@ -289,7 +301,7 @@ instruction:
     loginstr($3);
   }
   | T_INSTR T_OPEN_PAREN zp_byte T_COMMA T_X_REGISTER T_CLOSE_PAREN {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_X);
+    ENCODE_ADDR_MODE($1, mode_IND_X);
 
     currentBank->addByte($1.base);
     currentBank->addByte($3);
@@ -298,7 +310,7 @@ instruction:
     loginstr($3);
   }
   | T_INSTR T_ACCUMULATOR {
-    $1.base = opcode_set_addr_mode($1.type, $1.base, mode_ACC);
+    ENCODE_ADDR_MODE($1, mode_ACC);
 
     currentBank->addByte($1.base);
 
@@ -604,5 +616,5 @@ void logforwardsymbol(const char *s) {
 }
 
 void yyerror(const char *s) {
-  cerr << "Error on line (" << dec << line_num << "): " << s << endl;
+  cerr << "Error on line (" << line_num << "): " << s << endl;
 }

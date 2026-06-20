@@ -1,23 +1,35 @@
 #include "opcodes.h"
 
-unsigned char opcode_set_addr_mode(unsigned char group, unsigned char base, unsigned char addr_mode) {
+int opcode_set_addr_mode(unsigned char group, unsigned char base, unsigned char addr_mode,
+                         unsigned char *out) {
+  unsigned char encoded = base;
+
   switch (group) {
     case opcode_CC01:
-      base = opcode_CC01_set_addr_mode(base, addr_mode);
+      if (!opcode_CC01_set_addr_mode(base, addr_mode, &encoded)) {
+        return 0;
+      }
       break;
     case opcode_CC10:
-      base = opcode_CC10_set_addr_mode(base, addr_mode);
+      if (!opcode_CC10_set_addr_mode(base, addr_mode, &encoded)) {
+        return 0;
+      }
       break;
     case opcode_CC00:
-      base = opcode_CC00_set_addr_mode(base, addr_mode);
+      if (!opcode_CC00_set_addr_mode(base, addr_mode, &encoded)) {
+        return 0;
+      }
       break;
     case opcode_BRANCH:
     case opcode_IS:
     case opcode_REM:
     default:
+      encoded = base;
       break;
   }
-  return base;
+
+  *out = encoded;
+  return 1;
 }
 
 unsigned char opcode_bbb_set_addr_mode(unsigned char base, unsigned char addr_mode) {
@@ -25,7 +37,7 @@ unsigned char opcode_bbb_set_addr_mode(unsigned char base, unsigned char addr_mo
   return base | (addr_mode << 2);
 }
 
-unsigned char opcode_CC01_set_addr_mode(unsigned char base, unsigned char addr_mode) {
+int opcode_CC01_set_addr_mode(unsigned char base, unsigned char addr_mode, unsigned char *out) {
   /*
   000 (zero page,X)
   001 zero page
@@ -36,10 +48,15 @@ unsigned char opcode_CC01_set_addr_mode(unsigned char base, unsigned char addr_m
   110 absolute,Y
   111 absolute,X
    */
-  return opcode_bbb_set_addr_mode(base, addr_mode);;
+  if (addr_mode == mode_ACC) {
+    return 0;
+  }
+
+  *out = opcode_bbb_set_addr_mode(base, addr_mode);
+  return 1;
 }
 
-unsigned char opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_mode) {
+int opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_mode, unsigned char *out) {
   /*
   000 #immediate
   001 zero page
@@ -77,24 +94,47 @@ unsigned char opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_m
     case mode_IND_Y:
     case mode_ABS_Y:
     default:
-      // throw exception
-      break;
+      return 0;
   }
-  return opcode_bbb_set_addr_mode(base, cc10_addr_mode);
+
+  *out = opcode_bbb_set_addr_mode(base, cc10_addr_mode);
+  return 1;
 }
 
-unsigned char opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_mode) {
-  // Check if it's jmp
-  // TODO: Check when 0x6c should be used rather than 0x4c
-  //
-  // if (base == 0x40) {
-  //   if (addr_mode == mode_ABS) {
-  //     base = 0x60;
-  //   }
-  // }
+static int cc00_addr_mode_valid(unsigned char base, unsigned char addr_mode) {
+  unsigned char aaa = (base >> 5) & 0x7;
 
-  // Apart from jmp, it's same as CC10 addresses
-  return opcode_CC10_set_addr_mode(base, addr_mode);
+  switch (aaa) {
+    case 1: /* BIT */
+      return addr_mode == mode_ZERO || addr_mode == mode_ABS;
+
+    case 2: /* JMP */
+      return addr_mode == mode_ABS;
+
+    case 4: /* STY */
+      return addr_mode == mode_ZERO || addr_mode == mode_ABS ||
+             addr_mode == mode_ZERO_X || addr_mode == mode_ABS_X;
+
+    case 5: /* LDY */
+      return addr_mode == mode_IMM || addr_mode == mode_ZERO ||
+             addr_mode == mode_ZERO_X || addr_mode == mode_ABS ||
+             addr_mode == mode_ABS_X;
+
+    case 6: /* CPY */
+    case 7: /* CPX */
+      return addr_mode == mode_IMM || addr_mode == mode_ABS;
+
+    default:
+      return 0;
+  }
+}
+
+int opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_mode, unsigned char *out) {
+  if (!cc00_addr_mode_valid(base, addr_mode)) {
+    return 0;
+  }
+
+  return opcode_CC10_set_addr_mode(base, addr_mode, out);
 }
 
 int branch_relative(unsigned short from, unsigned short to, char *out) {
