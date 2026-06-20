@@ -5,7 +5,7 @@
 This is pretty much NESASM, but only supports mapper 0 - so not even as good. But I wrote it and I know how it works. ;)
 I will continue developing this for as long as it is fun, and hopefully surpass NESASM in functionality while doing so.
 
-Tested on OSX, should compile on Linux using Clang++ 3.4+ (that's what I use for Travis).
+Tested on OSX and Linux using Clang++ and G++ via GitHub Actions.
 
 ## To build
 
