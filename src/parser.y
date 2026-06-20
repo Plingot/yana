@@ -1,7 +1,6 @@
 %{
 #include <cstdio>
 #include <iostream>
-#include <sstream>
 
 using namespace std;
 
@@ -17,8 +16,6 @@ extern "C" FILE *yyin;
 extern int line_num;
 extern SymbolTable localSymbols;
 
-string hex(unsigned int c);
-string dec(unsigned int c);
 void logoptype(const char *type, unsigned char base);
 void logaddrmode(const char *mode);
 void loginstr(unsigned int c);
@@ -100,15 +97,15 @@ unsigned short internalRS;
 %%
 program:
   ines_header banks {
-    cout << "Update forward symbols." << endl;
     if (!bankTable.updateForwardSymbols(localSymbols)) {
       yyerror("Failed to update forward symbols.");
+      YYABORT;
     }
   }
   ;
 
 ines_header:
-  ines_entries { inesHeader.printData(); }
+  ines_entries
   ;
 
 ines_entries:
@@ -119,29 +116,15 @@ ines_entries:
 ines_entry:
   T_INES_PRG byte {
     inesHeader.setPRGRomSize($2);
-
-    cout << dec($2) << " program banks." << endl;
   }
   | T_INES_CHR byte {
     inesHeader.setCHRRomSize($2);
-
-    cout << dec($2) << " chr banks." << endl;
   }
   | T_INES_MIR byte {
     inesHeader.setMirroringNESASM($2);
-
-    cout << inesHeader.mirroring() << " mirroring mode." << endl;
-    if (inesHeader.sram()) {
-      cout << "With SRAM." << endl;
-    }
-    if (inesHeader.trainer()) {
-      cout << "With trainer." << endl;
-    }
   }
   | T_INES_MAP byte {
     inesHeader.setMapper($2);
-
-    cout << dec($2) << " mapper." << endl;
   }
   ;
 
@@ -154,8 +137,6 @@ banks:
 
 bank:
   bank_header instructions {
-    currentBank->printData();
-
     bankTable.add($1, move(currentBank));
   }
   ;
@@ -172,8 +153,6 @@ bank_header:
     currentBankNo = $1;
     currentBank = bankFactory.createBank(type, $2);
     $$ = currentBankNo;
-
-    cout << "Bank start: " << hex(currentBank->bankOffset()) << endl;
   }
   | org bank_no {
     // TODO: Check that we're not trying to create more banks than specified
@@ -186,14 +165,11 @@ bank_header:
     currentBankNo = $2;
     currentBank = bankFactory.createBank(type, $1);
     $$ = currentBankNo;
-
-    cout << "Bank start: " << hex(currentBank->bankOffset()) << endl;
   }
   ;
 
 bank_no:
   T_BANK byte {
-    cout << "Starting bank " << dec($2) << endl;
     $$ = $2;
   }
   ;
@@ -210,7 +186,6 @@ instructions:
 instruction:
   T_LABEL {
     unsigned short labelOffset = currentBank->currentOffset();
-    cout << "Found label [" << $1 << "] ref: " << hex(labelOffset) << endl;
     localSymbols.add($1, labelOffset);
   }
   | T_INSTR byte_imm {
@@ -256,6 +231,7 @@ instruction:
       if (!localSymbols.setForwardRel($1.lineNum)) {
         if (!branch_relative(from, $2, &relative)) {
           yyerror("Branch target out of range");
+          YYABORT;
         }
       }
 
@@ -327,23 +303,19 @@ instruction:
     currentBank->addByte($1.base);
 
     logoptype("ACC", $1.base);
-    cout << endl;
   }
   | T_INSTR {
     currentBank->addByte($1.base);
 
     logoptype("NO VALUE", $1.base);
-    cout << endl;
   }
   | T_DATA
   | T_FILE
   | org {
     currentBank->advanceOffset($1);
-
-    cout << "Moving to address: " << hex($1) << endl;
   }
   | variables
-  | UNKNOWN { yyerror("Unknown instruction"); }
+  | UNKNOWN { yyerror("Unknown instruction"); YYABORT; }
   ;
 
 T_INSTR:
@@ -363,24 +335,16 @@ variables:
 T_VARIABLE:
   T_RS_SET word {
     internalRS = $2;
-
-    cout << "Setting internal RS: " << hex($2) << endl;
   }
   | T_RS_SET byte {
     internalRS = $2;
-
-    cout << "Setting internal RS: " << hex($2) << endl;
   }
   | T_RS_SET T_SYMBOL {
     internalRS = $2.address;
-
-    cout << "Setting internal RS: ";
-    logsymbol($2);
   }
   | T_FORWARD_SYMBOL T_RS byte {
     unsigned short labelOffset = internalRS;
     internalRS += $3;
-    cout << "Found variable [" << $1 << "] ref: " << hex(labelOffset) << endl;
     localSymbols.add($1, labelOffset);
   }
   | equ_variable
@@ -388,76 +352,54 @@ T_VARIABLE:
 
 equ_variable:
   T_FORWARD_SYMBOL T_EQU word {
-    cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
     localSymbols.add($1, $3);
   }
   | T_FORWARD_SYMBOL T_EQU byte {
-    cout << "Found variable [" << $1 << "] value: " << hex($3) << endl;
     localSymbols.addByte($1, $3);
   }
   ;
 
 T_DATA:
-  T_DATA_WORD { cout << "word data: " << endl; } T_WORDS
-  | T_DATA_BYTE { cout << "byte data: " << endl; } T_BYTES
+  T_DATA_WORD T_WORDS
+  | T_DATA_BYTE T_BYTES
   ;
 
 T_WORDS:
   T_WORDS word {
     currentBank->addWord($2);
-
-    cout << hex($2) << endl;
   }
   | T_WORDS T_COMMA word {
     currentBank->addWord($3);
-
-    cout << hex($3) << endl;
   }
   | T_WORDS byte {
     currentBank->addWord($2);
-
-    cout << hex($2) << endl;
   }
   | T_WORDS T_COMMA byte {
     currentBank->addWord($3);
-
-    cout << hex($3) << endl;
   }
   | word {
     currentBank->addWord($1);
-
-    cout << hex($1) << endl;
   }
   | byte {
     currentBank->addWord($1);
-
-    cout << hex($1) << endl;
   }
   ;
 
 T_BYTES:
   T_BYTES byte {
     currentBank->addByte($2);
-
-    cout << hex($2) << endl;
   }
   | T_BYTES T_COMMA byte {
     currentBank->addByte($3);
-
-    cout << hex($3) << endl;
   }
   | byte {
     currentBank->addByte($1);
-
-    cout << hex($1) << endl;
   }
   ;
 
 T_FILE:
   T_FILE_BINARY T_STRING_LITERAL {
     currentBank->addBinary($2);
-
-    cout << "Adding binary: " << $2 << endl;
   }
   ;
 
@@ -495,6 +437,7 @@ zp_byte:
     logsymbol($1);
     if ($1.address > 0xff) {
       yyerror("Indirect addressing requires a zero page operand");
+      YYABORT;
     }
     $$ = $1.address & 0xff;
   }
@@ -635,52 +578,31 @@ word_value_expr_imm:
 
 %%
 
-string hex(unsigned int c) {
-  ostringstream stm;
-  stm << '$' << hex << c;
-  return stm.str();
-}
-
-string dec(unsigned int c) {
-  ostringstream stm;
-  stm << dec << c;
-  return stm.str();
-}
-
 void logoptype(const char *type, unsigned char base) {
-  cout << "[" << type << ":\t" << hex(base) << "]\t";
+  (void)type;
+  (void)base;
 }
 
 void logaddrmode(const char *mode) {
-  cout << "[AM: " << mode << "]\t";
-}
-
-void logline() {
-  cout << "(" << dec(line_num) << ")\t";
+  (void)mode;
 }
 
 void loginstr(unsigned int c) {
-  logline();
-  cout << "Instr: " << hex(c) << endl;
+  (void)c;
 }
 
 void loginstr(const char *s) {
-  logline();
-  cout << "Instr: " << s << endl;
+  (void)s;
 }
 
 void logsymbol(symbol s) {
-  logline();
-  cout << "Symbol [" << s.name << "] = " << hex(s.address) << endl;
+  (void)s;
 }
 
 void logforwardsymbol(const char *s) {
-  logline();
-  cout << "Forward symbol [" << s << "]" << endl;
+  (void)s;
 }
 
 void yyerror(const char *s) {
-  cout << "Error on line (" << dec(line_num) << "): " << s << endl;
-  cout << "\nAborting!\n" << endl;
-  exit(-1);
+  cerr << "Error on line (" << dec << line_num << "): " << s << endl;
 }
