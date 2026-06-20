@@ -195,6 +195,7 @@ X                      { return T_X_REGISTER; }
 Y                      { return T_Y_REGISTER; }
 A                      { return T_ACCUMULATOR; }
 
+"#\("                  { return T_HASH_OPEN_PAREN; }
 #\$[a-fA-F0-9]{1,4}    {
   /* Hex immediate value */
   unsigned short val = strtol(yytext + 2, 0, 16);
