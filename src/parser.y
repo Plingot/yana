@@ -307,6 +307,15 @@ instruction:
     logoptype("ABS_Y", $1.base);
     loginstr($2);
   }
+  | T_INSTR T_OPEN_PAREN word T_CLOSE_PAREN {
+    ENCODE_ADDR_MODE($1, mode_IND);
+
+    currentBank->addByte($1.base);
+    currentBank->addWord($3);
+
+    logoptype("IND", $1.base);
+    loginstr($3);
+  }
   | T_INSTR T_OPEN_PAREN zp_byte T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
     ENCODE_ADDR_MODE($1, mode_IND_Y);
 
@@ -524,7 +533,7 @@ byte_value_expr:
 
 zp_byte:
   byte
-  | word_expr {
+  | byte_value_expr {
     $$ = byte_expr_value($1, "Indirect addressing requires a zero page operand");
   }
   | T_SYMBOL {

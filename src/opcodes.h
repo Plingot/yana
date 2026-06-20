@@ -31,6 +31,7 @@
 #define mode_ABS_Y  0x06
 #define mode_ABS_X  0x07
 #define mode_ACC    0x08
+#define mode_IND    0x09
 
 int opcode_set_addr_mode(unsigned char group, unsigned char base, unsigned char addr_mode,
                          unsigned char *out);

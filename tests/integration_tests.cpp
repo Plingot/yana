@@ -375,6 +375,43 @@ TEST_CASE("immediate parenthesized expressions are supported",
   std::remove(output_path.c_str());
 }
 
+TEST_CASE("jmp absolute and indirect encode distinct opcodes",
+          "[integration][assembly]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_jmp_modes.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_jmp_modes.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n\n";
+    output << "JMP $8000\n";
+    output << "JMP ($FFFC)\n";
+  }
+
+  const ProcessResult result =
+      run_yana({"-o", ".yana_test_jmp_modes.nes", ".yana_test_jmp_modes.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 16 + 6);
+  const std::vector<unsigned char> actual(rom.begin() + 16, rom.begin() + 16 + 6);
+  const std::vector<unsigned char> expected = {
+      0x4c, 0x00, 0x80,  // JMP $8000
+      0x6c, 0xfc, 0xff,  // JMP ($FFFC)
+  };
+  REQUIRE(actual == expected);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}
+
 TEST_CASE("forward symbols work inside word/byte data expressions",
           "[integration][assembly]") {
   const std::string asm_path =
