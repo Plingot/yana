@@ -12,7 +12,7 @@ struct less_string {
   }
 };
 
-enum symbol_type{WORD, BYTE_HIGH, BYTE_LOW, BYTE_REL};
+enum symbol_type{WORD, BYTE_HIGH, BYTE_LOW, BYTE_REL, WORD_EXPR, BYTE_EXPR};
 
 struct symbol {
   const char *name;
@@ -26,6 +26,7 @@ struct forward_symbol {
   unsigned short address;
   int lineNum;
   symbol_type type;
+  short exprOffset;
 };
 
 class SymbolTable {
@@ -34,6 +35,8 @@ public:
   void add(std::string name, unsigned short address);
   void addByte(std::string name, unsigned short address);
   void addForward(std::string name, unsigned char bankNo, unsigned short address, int lineNum);
+  void addForwardExprWord(std::string name, unsigned char bankNo, unsigned short address, int lineNum, short exprOffset);
+  void addForwardExprByte(std::string name, unsigned char bankNo, unsigned short address, int lineNum, short exprOffset);
   void addForwardHigh(std::string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardLow(std::string name, unsigned char bankNo, unsigned short address, int lineNum);
   void addForwardRel(std::string name, unsigned char bankNo, unsigned short address, int lineNum);
@@ -43,7 +46,7 @@ public:
   bool setForwardRel(int lineNum);
 
 private:
-  void addForward(std::string name, unsigned char bankNo, unsigned short address, int lineNum, symbol_type type);
+  void addForward(std::string name, unsigned char bankNo, unsigned short address, int lineNum, symbol_type type, short exprOffset = 0);
 
   std::map<std::string, symbol, less_string> symbol_map;
   std::vector<forward_symbol> forward_symbols;

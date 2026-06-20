@@ -251,3 +251,44 @@ TEST_CASE("byte expression out of range is rejected", "[integration][negative]")
   std::remove(asm_path.c_str());
   std::remove((std::string(YANA_DATA_DIR) + "/.yana_test_byte_expr_range.nes").c_str());
 }
+
+TEST_CASE("forward symbols work inside word/byte data expressions",
+          "[integration][assembly]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_forward_expr_data.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_forward_expr_data.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $0000\n\n";
+    output << ".dw ForwardLabel + 1\n";
+    output << ".db ForwardLabel, ForwardLabel + 2\n";
+    output << "ForwardLabel:\n";
+    output << ".db $aa\n";
+  }
+
+  const ProcessResult result = run_yana(
+      {"-o", ".yana_test_forward_expr_data.nes", ".yana_test_forward_expr_data.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 16 + 5);
+  const std::vector<unsigned char> actual(rom.begin() + 16, rom.begin() + 16 + 5);
+  const std::vector<unsigned char> expected = {
+      0x05, 0x00,  // .dw ForwardLabel + 1
+      0x04,        // .db ForwardLabel
+      0x06,        // .db ForwardLabel + 2
+      0xaa,        // ForwardLabel
+  };
+  REQUIRE(actual == expected);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}
