@@ -9,17 +9,35 @@ Tested on OSX, should compile on Linux using Clang++ 3.4+ (that's what I use for
 
 ## To build
 
-`make`
+```sh
+cmake -S . -B build
+cmake --build build
+```
+
+Or:
+
+```sh
+make
+```
+
+The `yana` binary is written to `build/src/yana`.
 
 ## To test
 
-`make test`
+```sh
+ctest --test-dir build --output-on-failure
+```
 
-Runs a number of assemblies and compares the binary output with that of NESASM3.
+Or:
 
-`make test-negative`
+```sh
+make test
+```
 
-Runs assembler failure cases such as unresolved symbols, out-of-range branches, and missing `.incbin` files.
+Tests are written with [Catch2](https://github.com/catchorg/Catch2) and registered with CTest. They cover:
+
+- Assembly output comparisons against NESASM3 reference ROMs
+- Expected assembler failures such as unresolved symbols, out-of-range branches, and missing `.incbin` files
 
 ## License
 

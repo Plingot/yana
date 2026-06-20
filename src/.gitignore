@@ -3,3 +3,5 @@ parser.h
 scanner.cpp
 yana
 *.nes
+.yana_test_*
+.yana_test_stderr.txt

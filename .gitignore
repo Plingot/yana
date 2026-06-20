@@ -1,3 +1,4 @@
+build/
 parser.c 
 parser.h
 scanner.cpp
