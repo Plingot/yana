@@ -7,8 +7,9 @@
 BankTable bankTable;
 InesHeader inesHeader;
 
-extern "C" int yyparse();
 extern "C" FILE *yyin;
+
+int yyparse();
 
 void printUsage() {
   cout << "usage: yana [-o|--output[=<outfile>]] <infile>" << endl << endl;
