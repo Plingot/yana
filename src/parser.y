@@ -58,7 +58,7 @@ unsigned short internalRS;
   struct symbol sym;
 }
 
-%token T_COMMA T_OPEN_PAREN T_CLOSE_PAREN T_PLUS T_MINUS
+%token T_COMMA T_OPEN_PAREN T_CLOSE_PAREN T_PLUS T_MINUS T_HASH_OPEN_PAREN
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
@@ -520,7 +520,10 @@ zp_byte:
   ;
 
 byte_imm:
-  byte_expr_imm { $$ = byte_expr_value($1, "Operand out of range"); }
+  T_HASH_OPEN_PAREN byte_value_expr_imm T_CLOSE_PAREN {
+    $$ = byte_expr_value($2, "Operand out of range");
+  }
+  | byte_expr_imm { $$ = byte_expr_value($1, "Operand out of range"); }
   ;
 
 byte_expr_imm:
@@ -559,6 +562,12 @@ byte_primary_imm:
     localSymbols.addForwardLow($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
     logforwardsymbol($3);
     $$ = 0xff;
+  }
+  | T_LOW T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address & 0xff);
+  }
+  | T_HIGH T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
+    $$ = ($3.address >> 8);
   }
   | T_OPEN_PAREN byte_value_expr_imm T_CLOSE_PAREN { $$ = $2; }
   ;
@@ -617,7 +626,8 @@ word_data:
   ;
 
 word_imm:
-  word_expr_imm
+  T_HASH_OPEN_PAREN word_value_expr_imm T_CLOSE_PAREN { $$ = $2; }
+  | word_expr_imm
   | T_FORWARD_SYMBOL_IMM {
     // If forward_symbol is caught here, it will always have an instruction before it
     // That's why we add 1 to the currentOffset.
