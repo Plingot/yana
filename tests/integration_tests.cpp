@@ -488,3 +488,34 @@ TEST_CASE("comparison operators evaluate to 0 or 1 in expressions",
   std::remove(asm_path.c_str());
   std::remove(output_path.c_str());
 }
+
+TEST_CASE("inesflags7 directive sets iNES header byte 7", "[integration][assembly]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_ines_flags7.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_ines_flags7.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n";
+    output << ".inesflags7 $AB\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n";
+    output << "NOP\n";
+  }
+
+  const ProcessResult result = run_yana(
+      {"-o", ".yana_test_ines_flags7.nes", ".yana_test_ines_flags7.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 17);
+  REQUIRE(static_cast<unsigned char>(rom[7]) == 0xAB);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}

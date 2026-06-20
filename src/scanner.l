@@ -103,6 +103,7 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 \.ineschr              { return T_INES_CHR; }
 \.inesmir              { return T_INES_MIR; }
 \.inesmap              { return T_INES_MAP; }
+\.inesflags7           { return T_INES_FLAGS7; }
 
   /* bank handling */
 \.bank                 { return T_BANK; }
