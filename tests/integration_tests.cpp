@@ -519,3 +519,37 @@ TEST_CASE("inesflags7 directive sets iNES header byte 7", "[integration][assembl
   std::remove(asm_path.c_str());
   std::remove(output_path.c_str());
 }
+
+TEST_CASE("inesflags9 and inesflags10 directives set NES 2.0 header bytes",
+          "[integration][assembly]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_ines_flags9_10.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_ines_flags9_10.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n";
+    output << ".inesflags9 $12\n";
+    output << ".inesflags10 $34\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n";
+    output << "NOP\n";
+  }
+
+  const ProcessResult result = run_yana(
+      {"-o", ".yana_test_ines_flags9_10.nes", ".yana_test_ines_flags9_10.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 17);
+  REQUIRE(static_cast<unsigned char>(rom[9]) == 0x12);
+  REQUIRE(static_cast<unsigned char>(rom[10]) == 0x34);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}
