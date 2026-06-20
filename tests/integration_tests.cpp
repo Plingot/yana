@@ -178,6 +178,46 @@ TEST_CASE("word expressions support add/subtract with parentheses",
   std::remove(output_path.c_str());
 }
 
+TEST_CASE("word expressions support bitwise and shift operators",
+          "[integration][assembly]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_word_bitwise_expr.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_word_bitwise_expr.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n\n";
+    output << ".dw ($f0f0 | $000f), ($f0f0 & $0ff0), ($1234 >> 4)\n";
+    output << "LDA $1234 | $0003 & $12ff\n";
+  }
+
+  const ProcessResult result = run_yana(
+      {"-o", ".yana_test_word_bitwise_expr.nes", ".yana_test_word_bitwise_expr.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 16 + 9);
+  const std::vector<unsigned char> actual(rom.begin() + 16, rom.begin() + 16 + 9);
+  const std::vector<unsigned char> expected = {
+      0xff, 0xf0,        // .dw ($f0f0 | $000f)
+      0xf0, 0x00,        // .dw ($f0f0 & $0ff0)
+      0x23, 0x01,        // .dw ($1234 >> 4)
+      0xad, 0x37, 0x12,  // LDA (($1234 | $0003) & $12ff)
+  };
+
+  REQUIRE(actual == expected);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}
+
 TEST_CASE("invalid addressing mode is rejected", "[integration][negative]") {
   expect_assembler_failure({"-o", ".yana_test_addr_mode.nes", "negative/invalid_addr_mode.asm"});
 }
@@ -221,6 +261,51 @@ TEST_CASE("byte expressions support add/subtract and reject out of range",
       0xa9, 0xfe,  // LDA #($ff - 1)
       0xb1, 0x22,  // LDA ($20 + 2), Y
       0xa1, 0x23,  // LDA ($20 + 3, X)
+  };
+  REQUIRE(actual == expected);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}
+
+TEST_CASE("byte expressions support bitwise and shift operators",
+          "[integration][assembly]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_byte_bitwise_expr.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_byte_bitwise_expr.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n\n";
+    output << ".db ($f0 | $0f), ($f3 & $0f), ($80 >> 3)\n";
+    output << "LDA #$f0 | $01\n";
+    output << "LDA #$f3 & $0f\n";
+    output << "LDA #$80 >> 2\n";
+    output << "LDA ($f0 & $0f), Y\n";
+    output << "LDA ($80 >> 2, X)\n";
+  }
+
+  const ProcessResult result = run_yana(
+      {"-o", ".yana_test_byte_bitwise_expr.nes", ".yana_test_byte_bitwise_expr.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 16 + 13);
+  const std::vector<unsigned char> actual(rom.begin() + 16, rom.begin() + 16 + 13);
+  const std::vector<unsigned char> expected = {
+      0xff, 0x03, 0x10,  // .db ($f0 | $0f), ($f3 & $0f), ($80 >> 3)
+      0xa9, 0xf1,        // LDA #($f0 | $01)
+      0xa9, 0x03,        // LDA #($f3 & $0f)
+      0xa9, 0x20,        // LDA #($80 >> 2)
+      0xb1, 0x00,        // LDA ($f0 & $0f), Y
+      0xa1, 0x20,        // LDA ($80 >> 2, X)
   };
   REQUIRE(actual == expected);
 
