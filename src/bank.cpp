@@ -51,19 +51,7 @@ void Bank::addBinary(const char *fileName) {
   }
 }
 
-#define BYTES_PER_LINE 24
-
 void Bank::printData() {
-  int lineCount = BYTES_PER_LINE;
-  cout << endl << "-- Printing data --" << endl;
-  for (unsigned char *it = begin(); it != current(); ++it) {
-    cout << "$" << hex << (unsigned int) *it << "  ";
-    if (--lineCount <= 0) {
-      cout << endl;
-      lineCount = BYTES_PER_LINE;
-    }
-  }
-  cout << endl << "-- End of data --" << endl << endl;
 }
 
 void Bank::advanceOffset(unsigned short offset) {
@@ -73,7 +61,6 @@ void Bank::advanceOffset(unsigned short offset) {
     throw runtime_error("Bank position out of bounds while advancing offset");
   }
   advance(relative);
-  cout << "Advanced $" << hex << relative << " steps, to: $" << hex << currentOffset() << endl;
 }
 
 void Bank8::advance(short step) {
