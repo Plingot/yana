@@ -121,6 +121,10 @@ unsigned short internalRS;
 %%
 program:
   ines_header banks {
+    if (inesHeader.mapper() == 2 && inesHeader.prgRomSize() < 2) {
+      yyerror("Mapper 2 requires at least 2 PRG banks");
+      YYABORT;
+    }
     if (!bankTable.updateForwardSymbols(localSymbols)) {
       yyerror("Failed to update forward symbols.");
       YYABORT;
@@ -148,6 +152,10 @@ ines_entry:
     inesHeader.setMirroringNESASM($2);
   }
   | T_INES_MAP byte {
+    if ($2 != 0 && $2 != 2) {
+      yyerror("Unsupported mapper");
+      YYABORT;
+    }
     inesHeader.setMapper($2);
   }
   | T_INES_FLAGS7 byte {
@@ -184,6 +192,8 @@ bank_header:
     bank_type type = PRG;
     if ($1 >= inesHeader.prgRomSize()) {
       type = CHR;
+    } else if (inesHeader.mapper() == 2) {
+      type = PRG16;
     }
 
     currentBankNo = $1;
@@ -196,6 +206,8 @@ bank_header:
     bank_type type = PRG;
     if ($2 >= inesHeader.prgRomSize()) {
       type = CHR;
+    } else if (inesHeader.mapper() == 2) {
+      type = PRG16;
     }
 
     currentBankNo = $2;
