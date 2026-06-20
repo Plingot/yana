@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/Plingot/yana.svg)](https://travis-ci.org/Plingot/yana)
+[![CI](https://github.com/Plingot/yana/actions/workflows/ci.yml/badge.svg)](https://github.com/Plingot/yana/actions/workflows/ci.yml)
 
 # YANA - Yet Another NES Assembler
 
