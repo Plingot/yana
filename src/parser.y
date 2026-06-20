@@ -61,7 +61,7 @@ unsigned short internalRS;
 
 %token T_COMMA T_OPEN_PAREN T_CLOSE_PAREN T_PLUS T_MINUS T_HASH_OPEN_PAREN
 %token T_PIPE T_AMP T_SHIFT_RIGHT T_LT T_GT T_LE T_GE T_NE
-%token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
+%token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP T_INES_FLAGS7
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
 %token T_X_REGISTER T_Y_REGISTER T_ACCUMULATOR
@@ -149,6 +149,9 @@ ines_entry:
   }
   | T_INES_MAP byte {
     inesHeader.setMapper($2);
+  }
+  | T_INES_FLAGS7 byte {
+    inesHeader.setFlags7($2);
   }
   ;
 
