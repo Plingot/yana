@@ -1,0 +1,173 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: ${{ matrix.compiler }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [clang++, g++]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison flex cmake ninja-build bc
+
+      - name: Cache FetchContent dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: ${{ runner.os }}-${{ matrix.compiler }}-deps-${{ hashFiles('tests/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.compiler }}-deps-
+
+      - name: Configure
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          START=$(date +%s.%N)
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_CXX_COMPILER="$CXX" \
+            -DCMAKE_BUILD_TYPE=Release
+          END=$(date +%s.%N)
+          CONFIGURE_SEC=$(echo "$END - $START" | bc -l)
+          echo "CONFIGURE_SEC=$CONFIGURE_SEC" >> "$GITHUB_ENV"
+          echo "configure_sec=$CONFIGURE_SEC" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        id: build
+        run: |
+          START=$(date +%s.%N)
+          cmake --build build --parallel
+          END=$(date +%s.%N)
+          BUILD_SEC=$(echo "$END - $START" | bc -l)
+          echo "BUILD_SEC=$BUILD_SEC" >> "$GITHUB_ENV"
+          echo "build_sec=$BUILD_SEC" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        id: test
+        run: |
+          START=$(date +%s.%N)
+          set +e
+          ctest --test-dir build --output-on-failure -j"$(nproc)" 2>&1 | tee ctest.log
+          CTEST_EXIT=${PIPESTATUS[0]}
+          set -e
+          END=$(date +%s.%N)
+          TEST_SEC=$(echo "$END - $START" | bc -l)
+          echo "TEST_SEC=$TEST_SEC" >> "$GITHUB_ENV"
+
+          if grep -q "tests passed" ctest.log; then
+            SUMMARY=$(grep -E '% tests passed|passed, .* failed' ctest.log | tail -1)
+          else
+            SUMMARY="See workflow log for details"
+          fi
+          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
+          echo "test_sec=$TEST_SEC" >> "$GITHUB_OUTPUT"
+          echo "exit_code=$CTEST_EXIT" >> "$GITHUB_OUTPUT"
+          exit "$CTEST_EXIT"
+
+      - name: Write result snippet
+        if: always()
+        run: |
+          SAFE_COMPILER=$(echo "${{ matrix.compiler }}" | tr '+/' '__')
+          if [ "${{ steps.test.outcome }}" = "success" ]; then
+            STATUS="✅ Passed"
+          else
+            STATUS="❌ Failed"
+          fi
+          TOTAL_SEC=$(echo "${CONFIGURE_SEC} + ${BUILD_SEC} + ${TEST_SEC}" | bc -l)
+          mkdir -p ci-results
+          cat > "ci-results/${SAFE_COMPILER}.md" <<EOF
+          ### \`${{ matrix.compiler }}\` ${STATUS}
+          | Step | Duration |
+          |------|----------|
+          | Configure | ${CONFIGURE_SEC}s |
+          | Build | ${BUILD_SEC}s |
+          | Test | ${TEST_SEC}s |
+          | **Total** | **${TOTAL_SEC}s** |
+
+          **CTest:** ${{ steps.test.outputs.summary }}
+          EOF
+
+      - name: Upload result snippet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-result-${{ matrix.compiler }}
+          path: ci-results/
+          retention-days: 7
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## ${{ matrix.compiler }}"
+            echo "- Configure: ${CONFIGURE_SEC}s"
+            echo "- Build: ${BUILD_SEC}s"
+            echo "- Test: ${TEST_SEC}s"
+            echo "- CTest: ${{ steps.test.outputs.summary }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  pr-comment:
+    name: Update PR comment
+    needs: build-test
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download result snippets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ci-result-*
+          merge-multiple: true
+          path: ci-results
+
+      - name: Build comment body
+        id: body
+        run: |
+          OVERALL="${{ needs.build-test.result }}"
+          if [ "$OVERALL" = "success" ]; then
+            HEADER="✅ CI passed"
+          else
+            HEADER="❌ CI failed"
+          fi
+          {
+            echo "body<<EOF"
+            echo "## ${HEADER}"
+            echo
+            echo "Commit: \`${{ github.sha }}\`"
+            echo
+            if [ -d ci-results ]; then
+              for file in ci-results/*.md; do
+                [ -f "$file" ] || continue
+                cat "$file"
+                echo
+              done
+            else
+              echo "_No compiler results were uploaded._"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update sticky PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: yana-ci
+          message: ${{ steps.body.outputs.body }}
