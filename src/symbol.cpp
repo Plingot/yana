@@ -1,28 +1,26 @@
 #include "symbol.h"
 
-using namespace std;
-
-void SymbolTable::add(string name, unsigned short address) {
+void SymbolTable::add(std::string name, unsigned short address) {
   symbol s;
-  s.name = strdup(name.c_str());
+  s.name = nullptr;
   s.address = address;
   s.isByte = false;
 
   symbol_map[name] = s;
 }
 
-void SymbolTable::addByte(string name, unsigned short address) {
+void SymbolTable::addByte(std::string name, unsigned short address) {
   symbol s;
-  s.name = strdup(name.c_str());
+  s.name = nullptr;
   s.address = address & 0xff;
   s.isByte = true;
 
   symbol_map[name] = s;
 };
 
-void SymbolTable::addForward(string name, unsigned char bankNo, unsigned short address, int lineNum, symbol_type type) {
+void SymbolTable::addForward(std::string name, unsigned char bankNo, unsigned short address, int lineNum, symbol_type type) {
   forward_symbol s;
-  s.name = strdup(name.c_str());
+  s.name = name;
   s.bankNo = bankNo;
   s.address = address;
   s.lineNum = lineNum;
@@ -31,41 +29,44 @@ void SymbolTable::addForward(string name, unsigned char bankNo, unsigned short a
   forward_symbols.push_back(s);
 }
 
-void SymbolTable::addForward(string name, unsigned char bankNo, unsigned short address, int lineNum) {
+void SymbolTable::addForward(std::string name, unsigned char bankNo, unsigned short address, int lineNum) {
   addForward(name, bankNo, address, lineNum, WORD);
 }
 
-void SymbolTable::addForwardHigh(string name, unsigned char bankNo, unsigned short address, int lineNum) {
+void SymbolTable::addForwardHigh(std::string name, unsigned char bankNo, unsigned short address, int lineNum) {
   addForward(name, bankNo, address, lineNum, BYTE_HIGH);
 }
 
-void SymbolTable::addForwardLow(string name, unsigned char bankNo, unsigned short address, int lineNum) {
+void SymbolTable::addForwardLow(std::string name, unsigned char bankNo, unsigned short address, int lineNum) {
   addForward(name, bankNo, address, lineNum, BYTE_LOW);
 }
 
-void SymbolTable::addForwardRel(string name, unsigned char bankNo, unsigned short address, int lineNum) {
+void SymbolTable::addForwardRel(std::string name, unsigned char bankNo, unsigned short address, int lineNum) {
   addForward(name, bankNo, address, lineNum, BYTE_REL);
 }
 
-vector<forward_symbol>::iterator SymbolTable::forward_symbols_begin() {
+std::vector<forward_symbol>::iterator SymbolTable::forward_symbols_begin() {
   return forward_symbols.begin();
 }
 
-vector<forward_symbol>::iterator SymbolTable::forward_symbols_end() {
+std::vector<forward_symbol>::iterator SymbolTable::forward_symbols_end() {
   return forward_symbols.end();
 }
 
-symbol SymbolTable::find(string name) {
-  map<string, symbol, less_string>::iterator it;
+symbol SymbolTable::find(std::string name) {
+  std::map<std::string, symbol, less_string>::iterator it;
   it = symbol_map.find(name);
   if (it == symbol_map.end()) {
-    return symbol{};
+    return symbol{nullptr, 0, false};
   }
-  return it->second;
+
+  symbol s = it->second;
+  s.name = it->first.c_str();
+  return s;
 }
 
 bool SymbolTable::setForwardRel(int lineNum) {
-  vector<forward_symbol>::iterator it;
+  std::vector<forward_symbol>::iterator it;
   for (it = forward_symbols.begin(); it != forward_symbols.end(); ++it) {
     if (it->lineNum == lineNum) {
       it->type = BYTE_REL;

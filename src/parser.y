@@ -81,6 +81,7 @@ unsigned short internalRS;
 %type <word> word_imm
 %type <byte> byte
 %type <byte> byte_imm
+%type <byte> zp_byte
 %type <opcode> T_INSTR
 %type <word> org
 %type <byte> bank_header
@@ -239,11 +240,13 @@ instruction:
   | T_INSTR word {
     if ($1.type == opcode_BRANCH) {
       unsigned short from = currentBank->currentOffset();
-      char relative = branch_relative(from, $2);
+      char relative = 0xff;
 
-      // Check if we have a forward symbol to update
-      if (localSymbols.setForwardRel($1.lineNum)) {
-        relative = 0xff;
+      // Forward branches are patched in the second pass.
+      if (!localSymbols.setForwardRel($1.lineNum)) {
+        if (!branch_relative(from, $2, &relative)) {
+          yyerror("Branch target out of range");
+        }
       }
 
       currentBank->addByte($1.base);
@@ -290,7 +293,7 @@ instruction:
     logoptype("ABS_Y", $1.base);
     loginstr($2);
   }
-  | T_INSTR T_OPEN_PAREN word T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
+  | T_INSTR T_OPEN_PAREN zp_byte T_CLOSE_PAREN T_COMMA T_Y_REGISTER {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_Y);
 
     currentBank->addByte($1.base);
@@ -299,11 +302,11 @@ instruction:
     logoptype("IND_Y", $1.base);
     loginstr($3);
   }
-  | T_INSTR T_OPEN_PAREN word T_COMMA T_X_REGISTER T_CLOSE_PAREN {
+  | T_INSTR T_OPEN_PAREN zp_byte T_COMMA T_X_REGISTER T_CLOSE_PAREN {
     $1.base = opcode_set_addr_mode($1.type, $1.base, mode_IND_X);
 
     currentBank->addByte($1.base);
-    currentBank->addWord($3);
+    currentBank->addByte($3);
 
     logoptype("IND_X", $1.base);
     loginstr($3);
@@ -472,6 +475,22 @@ byte:
     // That's why we add 1 to the currentOffset.
     localSymbols.addForwardLow($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
     logforwardsymbol($3);
+    $$ = 0xff;
+  }
+  ;
+
+zp_byte:
+  byte
+  | T_SYMBOL {
+    logsymbol($1);
+    if ($1.address > 0xff) {
+      yyerror("Indirect addressing requires a zero page operand");
+    }
+    $$ = $1.address & 0xff;
+  }
+  | T_FORWARD_SYMBOL {
+    localSymbols.addForwardLow($1, currentBankNo, currentBank->currentOffset() + 1, line_num);
+    logforwardsymbol($1);
     $$ = 0xff;
   }
   ;

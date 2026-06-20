@@ -6,6 +6,19 @@
 
 using namespace std;
 
+#include <list>
+
+list<string> token_pool;
+
+void clear_token_pool() {
+  token_pool.clear();
+}
+
+const char *pool_token(const char *text, size_t len) {
+  token_pool.emplace_back(text, len);
+  return token_pool.back().c_str();
+}
+
 #define YY_DECL extern "C" int yylex()
 
 int line_num = 1;
@@ -214,14 +227,14 @@ LOW                    { return T_LOW; }
   /* String literal */
 
   // Copy everything but the quotes
-  yylval.c_str = strndup(yytext + 1, strlen(yytext) - 2);
+  yylval.c_str = pool_token(yytext + 1, strlen(yytext) - 2);
   return T_STRING_LITERAL;
 };
 {NAME}:                {
   /* Named label definition */
 
   // Copy everything but the colon
-  yylval.c_str = strndup(yytext, strlen(yytext) - 1);
+  yylval.c_str = pool_token(yytext, strlen(yytext) - 1);
   return T_LABEL;
 };
 
@@ -230,7 +243,7 @@ LOW                    { return T_LOW; }
   symbol sym = localSymbols.find(yytext);
   if (!sym.name) {
     // Undefined symbol
-    yylval.c_str = strdup(yytext);
+    yylval.c_str = pool_token(yytext, strlen(yytext));
     return T_FORWARD_SYMBOL;
   }
   yylval.sym = sym;
@@ -247,7 +260,7 @@ LOW                    { return T_LOW; }
   symbol sym = localSymbols.find(yytext + 1);
   if (!sym.name) {
     // Undefined symbol
-    yylval.c_str = strdup(yytext + 1);
+    yylval.c_str = pool_token(yytext + 1, strlen(yytext) - 1);
     return T_FORWARD_SYMBOL_IMM;
   }
   yylval.sym = sym;

@@ -2,11 +2,11 @@
 #define BANK_H
 
 #include <array>
-#include <map>
 #include <fstream>
+#include <map>
+#include <memory>
+#include <string>
 #include "symbol.h"
-
-using namespace std;
 
 enum bank_type{PRG, PRG16, CHR};
 
@@ -25,14 +25,10 @@ public:
   unsigned short currentOffset() {
     return bankOffset() + (current() - begin());
   };
-  void advanceOffset(unsigned short offset) {
-    short relative = offset - currentOffset();
-    advance(relative);
-    cout << "Advanced $" << hex << relative << " steps, to: $" << hex << currentOffset() << endl;
-  };
+  void advanceOffset(unsigned short offset);
   virtual void advance(short step) = 0;
 
-  virtual void write(fstream &file) = 0;
+  virtual void write(std::fstream &file) = 0;
 
 protected:
   virtual unsigned char *begin() = 0;
@@ -53,14 +49,7 @@ public:
   };
   ~Bank8() {};
 
-  virtual void advance(short step) {
-    _current += step;
-    if (_current > data.end()) {
-      _current = data.end();
-    } else if (_current < data.begin()) {
-      _current = data.begin();
-    }
-  };
+  virtual void advance(short step);
 
 protected:
   virtual unsigned char *begin() {
@@ -76,12 +65,10 @@ protected:
     data.fill(value);
   };
 
-  virtual void write(fstream &file) {
-    file.write((const char *)data.begin(), data.end() - data.begin());
-  };
+  virtual void write(std::fstream &file);
 
 private:
-  typedef array<unsigned char, 8192> Array8k;
+  typedef std::array<unsigned char, 8192> Array8k;
   Array8k data;
   Array8k::iterator _current;
 };
@@ -93,14 +80,7 @@ public:
   };
   ~Bank16() {};
 
-  virtual void advance(short step) {
-    _current += step;
-    if (_current > data.end()) {
-      _current = data.end();
-    } else if (_current < data.begin()) {
-      _current = data.begin();
-    }
-  };
+  virtual void advance(short step);
 
 protected:
   virtual unsigned char *begin() {
@@ -116,12 +96,10 @@ protected:
     data.fill(value);
   };
 
-  virtual void write(fstream &file) {
-    file.write((const char *)data.begin(), data.end() - data.begin());
-  };
+  virtual void write(std::fstream &file);
 
 private:
-  typedef array<unsigned char, 16384> Array16k;
+  typedef std::array<unsigned char, 16384> Array16k;
   Array16k data;
   Array16k::iterator _current;
 };
@@ -129,7 +107,7 @@ private:
 
 class BankFactory {
 public:
-  unique_ptr<Bank> createBank(bank_type type, unsigned short offset) {
+  std::unique_ptr<Bank> createBank(bank_type type, unsigned short offset) {
     Bank *bank;
 
     switch (type) {
@@ -146,20 +124,20 @@ public:
         break;
     }
 
-    unique_ptr<Bank> result(bank);
+    std::unique_ptr<Bank> result(bank);
     return result;
   }
 };
 
 class BankTable {
 public:
-  void add(unsigned int number, unique_ptr<Bank> bank);
+  void add(unsigned int number, std::unique_ptr<Bank> bank);
   Bank *find(unsigned int number);
-  void write(fstream &file);
+  void write(std::fstream &file);
   bool updateForwardSymbols(SymbolTable &symbolTable);
 
 private:
-  map<unsigned int, unique_ptr<Bank> > bank_map;
+  std::map<unsigned int, std::unique_ptr<Bank> > bank_map;
 };
 
 #endif

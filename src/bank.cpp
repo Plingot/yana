@@ -4,6 +4,7 @@
 #include <vector>
 #include <iterator>
 #include <map>
+#include <stdexcept>
 #include "bank.h"
 #include "opcodes.h"
 
@@ -24,6 +25,9 @@ void Bank::alignOffset(unsigned short alignment) {
 }
 
 void Bank::addByte(unsigned char byte) {
+  if (current() >= last()) {
+    throw runtime_error("Bank overflow while writing byte");
+  }
   *current() = byte;
   advance(1);
 }
@@ -35,14 +39,16 @@ void Bank::addWord(unsigned short word) {
 
 void Bank::addBinary(const char *fileName) {
   ifstream file(fileName, ios::binary);
+  if (!file) {
+    throw runtime_error(string("Unable to open binary include: ") + fileName);
+  }
+
   noskipws(file);
   istream_iterator<unsigned char> its(file), end;
 
   for (; its != end; its++) {
     addByte(*its);
   }
-
-  file.close();
 }
 
 #define BYTES_PER_LINE 24
@@ -60,6 +66,46 @@ void Bank::printData() {
   cout << endl << "-- End of data --" << endl << endl;
 }
 
+void Bank::advanceOffset(unsigned short offset) {
+  short relative = offset - currentOffset();
+  unsigned char *new_current = current() + relative;
+  if (new_current < begin() || new_current > last()) {
+    throw runtime_error("Bank position out of bounds while advancing offset");
+  }
+  advance(relative);
+  cout << "Advanced $" << hex << relative << " steps, to: $" << hex << currentOffset() << endl;
+}
+
+void Bank8::advance(short step) {
+  unsigned char *new_current = _current + step;
+  if (new_current > data.end() || new_current < data.begin()) {
+    throw runtime_error("Bank position out of bounds");
+  }
+  _current = new_current;
+}
+
+void Bank8::write(fstream &file) {
+  file.write((const char *)data.begin(), data.end() - data.begin());
+  if (!file) {
+    throw runtime_error("Failed to write bank data");
+  }
+}
+
+void Bank16::advance(short step) {
+  unsigned char *new_current = _current + step;
+  if (new_current > data.end() || new_current < data.begin()) {
+    throw runtime_error("Bank position out of bounds");
+  }
+  _current = new_current;
+}
+
+void Bank16::write(fstream &file) {
+  file.write((const char *)data.begin(), data.end() - data.begin());
+  if (!file) {
+    throw runtime_error("Failed to write bank data");
+  }
+}
+
 void BankTable::add(unsigned int number, unique_ptr<Bank> bank) {
   bank_map[number] = move(bank);
 }
@@ -68,7 +114,7 @@ Bank *BankTable::find(unsigned int number) {
   map<unsigned int, unique_ptr<Bank> >::iterator it;
   it = bank_map.find(number);
   if (it == bank_map.end()) {
-    return NULL;
+    return nullptr;
   }
   return it->second.get();
 }
@@ -103,9 +149,16 @@ bool BankTable::updateForwardSymbols(SymbolTable &symbolTable) {
             bank->addByte(sym.address & 0xff);
             break;
 
-          case BYTE_REL:
-            bank->addByte(branch_relative(forward.address - 1, sym.address));
+          case BYTE_REL: {
+            char relative;
+            if (!branch_relative(forward.address - 1, sym.address, &relative)) {
+              cerr << "error: Branch target out of range!" << endl;
+              cerr << "Referenced [" << forward.name << "] at line (" << forward.lineNum << ")." << endl;
+              return false;
+            }
+            bank->addByte(relative);
             break;
+          }
 
           default:
             cerr << "error: Unhandled forward symbol type! [" << forward.type << "]" << endl;

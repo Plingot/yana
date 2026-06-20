@@ -8,11 +8,15 @@ default: clean yana
 
 test: default $(CMP_BINARIES)
 
-%: %.nes
-	cmp $^ $@_nesasm.nes
+test-negative: yana
+	chmod +x negative/run_negative_tests.sh
+	./negative/run_negative_tests.sh
 
 %.nes: %.asm
 	./yana -o $@ $<
+
+%: %.nes
+	cmp $^ $@_nesasm.nes
 
 clean:
 	rm -f yana parser.c parser.h scanner.cpp $(BINARIES)

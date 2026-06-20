@@ -17,6 +17,10 @@ Tested on OSX, should compile on Linux using Clang++ 3.4+ (that's what I use for
 
 Runs a number of assemblies and compares the binary output with that of NESASM3.
 
+`make test-negative`
+
+Runs assembler failure cases such as unresolved symbols, out-of-range branches, and missing `.incbin` files.
+
 ## License
 
 MIT Licensed. Please contribute if you like this.

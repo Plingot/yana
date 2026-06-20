@@ -1,10 +1,12 @@
 #ifndef INES_HEADER_H
 #define INES_HEADER_H
 
+#include <array>
+#include <fstream>
 #include <iostream>
+#include <stdexcept>
+#include <string>
 #include "bank.h"
-
-using namespace std;
 
 #define HORZ_MIRROR 0x0
 #define VERT_MIRROR 0x1
@@ -26,8 +28,7 @@ public:
     addByte(0x53);
     addByte(0x1a);
 
-    // Advance to end
-    advance(0xff);
+    _current = data.end();
   };
   ~InesHeader() {};
 
@@ -73,9 +74,9 @@ public:
     updateFlags6();
   };
 
-  string mirroring() {
+  std::string mirroring() {
     unsigned char mirrorValue = flags6 & 0x9;
-    string ret;
+    std::string ret;
     switch (mirrorValue) {
       case HORZ_MIRROR:
         ret = "HORZ";
@@ -167,17 +168,19 @@ public:
     setTrainer(((value & 0x4) > 0));
   };
 
-  virtual void write(fstream &file) {
+  virtual void write(std::fstream &file) {
     file.write((const char *)data.begin(), data.end() - data.begin());
+    if (!file) {
+      throw std::runtime_error("Failed to write iNES header");
+    }
   };
 
   virtual void advance(short step) {
-    _current += step;
-    if (_current > data.end()) {
-      _current = data.end();
-    } else if (_current < data.begin()) {
-      _current = data.begin();
+    unsigned char *new_current = _current + step;
+    if (new_current > data.end() || new_current < data.begin()) {
+      throw std::runtime_error("iNES header position out of bounds");
     }
+    _current = new_current;
   };
 
 protected:
@@ -211,7 +214,7 @@ private:
     data.at(10) = flags10;
   };
 
-  typedef array<unsigned char, 16> InesArray;
+  typedef std::array<unsigned char, 16> InesArray;
   InesArray data;
   InesArray::iterator _current;
 

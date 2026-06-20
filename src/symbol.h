@@ -3,12 +3,11 @@
 
 #include <iostream>
 #include <map>
+#include <string>
 #include <vector>
 
-using namespace std;
-
 struct less_string {
-  bool operator()(string s1, string s2) const {
+  bool operator()(const std::string &s1, const std::string &s2) const {
     return s1.compare(s2) < 0;
   }
 };
@@ -22,7 +21,7 @@ struct symbol {
 };
 
 struct forward_symbol {
-  const char *name;
+  std::string name;
   unsigned char bankNo;
   unsigned short address;
   int lineNum;
@@ -32,22 +31,22 @@ struct forward_symbol {
 class SymbolTable {
 
 public:
-  void add(string name, unsigned short address);
-  void addByte(string name, unsigned short address);
-  void addForward(string name, unsigned char bankNo, unsigned short address, int lineNum);
-  void addForwardHigh(string name, unsigned char bankNo, unsigned short address, int lineNum);
-  void addForwardLow(string name, unsigned char bankNo, unsigned short address, int lineNum);
-  void addForwardRel(string name, unsigned char bankNo, unsigned short address, int lineNum);
-  vector<forward_symbol>::iterator forward_symbols_begin();
-  vector<forward_symbol>::iterator forward_symbols_end();
-  symbol find(string name);
+  void add(std::string name, unsigned short address);
+  void addByte(std::string name, unsigned short address);
+  void addForward(std::string name, unsigned char bankNo, unsigned short address, int lineNum);
+  void addForwardHigh(std::string name, unsigned char bankNo, unsigned short address, int lineNum);
+  void addForwardLow(std::string name, unsigned char bankNo, unsigned short address, int lineNum);
+  void addForwardRel(std::string name, unsigned char bankNo, unsigned short address, int lineNum);
+  std::vector<forward_symbol>::iterator forward_symbols_begin();
+  std::vector<forward_symbol>::iterator forward_symbols_end();
+  symbol find(std::string name);
   bool setForwardRel(int lineNum);
 
 private:
-  void addForward(string name, unsigned char bankNo, unsigned short address, int lineNum, symbol_type type);
+  void addForward(std::string name, unsigned char bankNo, unsigned short address, int lineNum, symbol_type type);
 
-  map<string, symbol, less_string> symbol_map;
-  vector<forward_symbol> forward_symbols;
+  std::map<std::string, symbol, less_string> symbol_map;
+  std::vector<forward_symbol> forward_symbols;
 
 };
 
