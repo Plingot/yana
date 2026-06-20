@@ -91,6 +91,11 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 \|                     { return T_PIPE; }
 \&                     { return T_AMP; }
 >>                     { return T_SHIFT_RIGHT; }
+"<>"                   { return T_NE; }
+"<="                   { return T_LE; }
+">="                   { return T_GE; }
+"<"                    { return T_LT; }
+">"                    { return T_GT; }
 =                      { return T_EQU; }
 
   /* ines header */

@@ -415,3 +415,39 @@ TEST_CASE("forward symbols work inside word/byte data expressions",
   std::remove(asm_path.c_str());
   std::remove(output_path.c_str());
 }
+
+TEST_CASE("comparison operators evaluate to 0 or 1 in expressions",
+          "[integration][assembly]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_compare_expr.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_compare_expr.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $0000\n\n";
+    output << ".db $05 = $05\n";
+    output << ".db $05 <> $04\n";
+    output << ".db $03 < $04\n";
+    output << ".db $05 >= $05\n";
+  }
+
+  const ProcessResult result = run_yana(
+      {"-o", ".yana_test_compare_expr.nes", ".yana_test_compare_expr.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 16 + 4);
+  const std::vector<unsigned char> actual(rom.begin() + 16, rom.begin() + 16 + 4);
+  const std::vector<unsigned char> expected = {0x01, 0x01, 0x01, 0x01};
+  REQUIRE(actual == expected);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}

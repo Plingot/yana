@@ -24,6 +24,7 @@ void logsymbol(symbol s);
 void logforwardsymbol(const char *s);
 void yyerror(const char *s);
 unsigned char byte_expr_value(unsigned short value, const char *rangeError);
+unsigned short expr_compare_result(bool value);
 
 #define ENCODE_ADDR_MODE(op, mode) \
   do { \
@@ -59,7 +60,7 @@ unsigned short internalRS;
 }
 
 %token T_COMMA T_OPEN_PAREN T_CLOSE_PAREN T_PLUS T_MINUS T_HASH_OPEN_PAREN
-%token T_PIPE T_AMP T_SHIFT_RIGHT
+%token T_PIPE T_AMP T_SHIFT_RIGHT T_LT T_GT T_LE T_GE T_NE
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
@@ -464,6 +465,12 @@ byte_expr:
   | byte_expr T_SHIFT_RIGHT byte_value { $$ = $1 >> $3; }
   | byte_expr T_AMP byte_value { $$ = $1 & $3; }
   | byte_expr T_PIPE byte_value { $$ = $1 | $3; }
+  | byte_expr T_EQU byte_value { $$ = expr_compare_result($1 == $3); }
+  | byte_expr T_NE byte_value { $$ = expr_compare_result($1 != $3); }
+  | byte_expr T_LT byte_value { $$ = expr_compare_result($1 < $3); }
+  | byte_expr T_GT byte_value { $$ = expr_compare_result($1 > $3); }
+  | byte_expr T_LE byte_value { $$ = expr_compare_result($1 <= $3); }
+  | byte_expr T_GE byte_value { $$ = expr_compare_result($1 >= $3); }
   | byte_primary
   ;
 
@@ -506,6 +513,12 @@ byte_value_expr:
   | byte_value_expr T_SHIFT_RIGHT byte_value { $$ = $1 >> $3; }
   | byte_value_expr T_AMP byte_value { $$ = $1 & $3; }
   | byte_value_expr T_PIPE byte_value { $$ = $1 | $3; }
+  | byte_value_expr T_EQU byte_value { $$ = expr_compare_result($1 == $3); }
+  | byte_value_expr T_NE byte_value { $$ = expr_compare_result($1 != $3); }
+  | byte_value_expr T_LT byte_value { $$ = expr_compare_result($1 < $3); }
+  | byte_value_expr T_GT byte_value { $$ = expr_compare_result($1 > $3); }
+  | byte_value_expr T_LE byte_value { $$ = expr_compare_result($1 <= $3); }
+  | byte_value_expr T_GE byte_value { $$ = expr_compare_result($1 >= $3); }
   | byte_value
   ;
 
@@ -542,6 +555,12 @@ byte_expr_imm:
   | byte_expr_imm T_SHIFT_RIGHT byte_value_imm { $$ = $1 >> $3; }
   | byte_expr_imm T_AMP byte_value_imm { $$ = $1 & $3; }
   | byte_expr_imm T_PIPE byte_value_imm { $$ = $1 | $3; }
+  | byte_expr_imm T_EQU byte_value_imm { $$ = expr_compare_result($1 == $3); }
+  | byte_expr_imm T_NE byte_value_imm { $$ = expr_compare_result($1 != $3); }
+  | byte_expr_imm T_LT byte_value_imm { $$ = expr_compare_result($1 < $3); }
+  | byte_expr_imm T_GT byte_value_imm { $$ = expr_compare_result($1 > $3); }
+  | byte_expr_imm T_LE byte_value_imm { $$ = expr_compare_result($1 <= $3); }
+  | byte_expr_imm T_GE byte_value_imm { $$ = expr_compare_result($1 >= $3); }
   | byte_primary_imm
   ;
 
@@ -595,6 +614,12 @@ byte_value_expr_imm:
   | byte_value_expr_imm T_SHIFT_RIGHT byte_value_imm { $$ = $1 >> $3; }
   | byte_value_expr_imm T_AMP byte_value_imm { $$ = $1 & $3; }
   | byte_value_expr_imm T_PIPE byte_value_imm { $$ = $1 | $3; }
+  | byte_value_expr_imm T_EQU byte_value_imm { $$ = expr_compare_result($1 == $3); }
+  | byte_value_expr_imm T_NE byte_value_imm { $$ = expr_compare_result($1 != $3); }
+  | byte_value_expr_imm T_LT byte_value_imm { $$ = expr_compare_result($1 < $3); }
+  | byte_value_expr_imm T_GT byte_value_imm { $$ = expr_compare_result($1 > $3); }
+  | byte_value_expr_imm T_LE byte_value_imm { $$ = expr_compare_result($1 <= $3); }
+  | byte_value_expr_imm T_GE byte_value_imm { $$ = expr_compare_result($1 >= $3); }
   | byte_value_imm
   ;
 
@@ -663,6 +688,12 @@ word_expr:
   | word_expr T_SHIFT_RIGHT word_value { $$ = $1 >> $3; }
   | word_expr T_AMP word_value { $$ = $1 & $3; }
   | word_expr T_PIPE word_value { $$ = $1 | $3; }
+  | word_expr T_EQU word_value { $$ = expr_compare_result($1 == $3); }
+  | word_expr T_NE word_value { $$ = expr_compare_result($1 != $3); }
+  | word_expr T_LT word_value { $$ = expr_compare_result($1 < $3); }
+  | word_expr T_GT word_value { $$ = expr_compare_result($1 > $3); }
+  | word_expr T_LE word_value { $$ = expr_compare_result($1 <= $3); }
+  | word_expr T_GE word_value { $$ = expr_compare_result($1 >= $3); }
   | word_primary
   ;
 
@@ -690,6 +721,12 @@ word_value_expr:
   | word_value_expr T_SHIFT_RIGHT word_value { $$ = $1 >> $3; }
   | word_value_expr T_AMP word_value { $$ = $1 & $3; }
   | word_value_expr T_PIPE word_value { $$ = $1 | $3; }
+  | word_value_expr T_EQU word_value { $$ = expr_compare_result($1 == $3); }
+  | word_value_expr T_NE word_value { $$ = expr_compare_result($1 != $3); }
+  | word_value_expr T_LT word_value { $$ = expr_compare_result($1 < $3); }
+  | word_value_expr T_GT word_value { $$ = expr_compare_result($1 > $3); }
+  | word_value_expr T_LE word_value { $$ = expr_compare_result($1 <= $3); }
+  | word_value_expr T_GE word_value { $$ = expr_compare_result($1 >= $3); }
   | word_value
   ;
 
@@ -699,6 +736,12 @@ word_expr_imm:
   | word_expr_imm T_SHIFT_RIGHT word_value_imm { $$ = $1 >> $3; }
   | word_expr_imm T_AMP word_value_imm { $$ = $1 & $3; }
   | word_expr_imm T_PIPE word_value_imm { $$ = $1 | $3; }
+  | word_expr_imm T_EQU word_value_imm { $$ = expr_compare_result($1 == $3); }
+  | word_expr_imm T_NE word_value_imm { $$ = expr_compare_result($1 != $3); }
+  | word_expr_imm T_LT word_value_imm { $$ = expr_compare_result($1 < $3); }
+  | word_expr_imm T_GT word_value_imm { $$ = expr_compare_result($1 > $3); }
+  | word_expr_imm T_LE word_value_imm { $$ = expr_compare_result($1 <= $3); }
+  | word_expr_imm T_GE word_value_imm { $$ = expr_compare_result($1 >= $3); }
   | word_primary_imm
   ;
 
@@ -736,6 +779,12 @@ word_value_expr_imm:
   | word_value_expr_imm T_SHIFT_RIGHT word_value_imm { $$ = $1 >> $3; }
   | word_value_expr_imm T_AMP word_value_imm { $$ = $1 & $3; }
   | word_value_expr_imm T_PIPE word_value_imm { $$ = $1 | $3; }
+  | word_value_expr_imm T_EQU word_value_imm { $$ = expr_compare_result($1 == $3); }
+  | word_value_expr_imm T_NE word_value_imm { $$ = expr_compare_result($1 != $3); }
+  | word_value_expr_imm T_LT word_value_imm { $$ = expr_compare_result($1 < $3); }
+  | word_value_expr_imm T_GT word_value_imm { $$ = expr_compare_result($1 > $3); }
+  | word_value_expr_imm T_LE word_value_imm { $$ = expr_compare_result($1 <= $3); }
+  | word_value_expr_imm T_GE word_value_imm { $$ = expr_compare_result($1 >= $3); }
   | word_value_imm
   ;
 
@@ -768,6 +817,10 @@ void logforwardsymbol(const char *s) {
 
 void yyerror(const char *s) {
   cerr << "Error on line (" << line_num << "): " << s << endl;
+}
+
+unsigned short expr_compare_result(bool value) {
+  return value ? 1 : 0;
 }
 
 unsigned char byte_expr_value(unsigned short value, const char *rangeError) {
