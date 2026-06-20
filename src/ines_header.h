@@ -66,6 +66,16 @@ public:
     updateFlags7();
   };
 
+  void setFlags9(unsigned char value) {
+    flags9 = value;
+    updateFlags9();
+  };
+
+  void setFlags10(unsigned char value) {
+    flags10 = value;
+    updateFlags10();
+  };
+
   unsigned char mapper() {
     unsigned char lower = (flags6 >> 4);
     unsigned char upper = (flags7 >> 4);

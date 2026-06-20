@@ -104,6 +104,8 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 \.inesmir              { return T_INES_MIR; }
 \.inesmap              { return T_INES_MAP; }
 \.inesflags7           { return T_INES_FLAGS7; }
+\.inesflags9           { return T_INES_FLAGS9; }
+\.inesflags10          { return T_INES_FLAGS10; }
 
   /* bank handling */
 \.bank                 { return T_BANK; }
