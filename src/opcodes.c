@@ -48,7 +48,7 @@ int opcode_CC01_set_addr_mode(unsigned char base, unsigned char addr_mode, unsig
   110 absolute,Y
   111 absolute,X
    */
-  if (addr_mode == mode_ACC) {
+  if (addr_mode == mode_ACC || addr_mode == mode_IND) {
     return 0;
   }
 
@@ -92,6 +92,7 @@ int opcode_CC10_set_addr_mode(unsigned char base, unsigned char addr_mode, unsig
 
     case mode_IND_X:
     case mode_IND_Y:
+    case mode_IND:
     case mode_ABS_Y:
     default:
       return 0;
@@ -109,7 +110,7 @@ static int cc00_addr_mode_valid(unsigned char base, unsigned char addr_mode) {
       return addr_mode == mode_ZERO || addr_mode == mode_ABS;
 
     case 2: /* JMP */
-      return addr_mode == mode_ABS;
+      return addr_mode == mode_ABS || addr_mode == mode_IND;
 
     case 4: /* STY */
       return addr_mode == mode_ZERO || addr_mode == mode_ABS ||
@@ -132,6 +133,12 @@ static int cc00_addr_mode_valid(unsigned char base, unsigned char addr_mode) {
 int opcode_CC00_set_addr_mode(unsigned char base, unsigned char addr_mode, unsigned char *out) {
   if (!cc00_addr_mode_valid(base, addr_mode)) {
     return 0;
+  }
+
+  unsigned char aaa = (base >> 5) & 0x7;
+  if (aaa == 2 && addr_mode == mode_IND) {
+    *out = 0x6c;
+    return 1;
   }
 
   return opcode_CC10_set_addr_mode(base, addr_mode, out);
