@@ -84,6 +84,7 @@ unsigned short internalRS;
 %token <c_str> T_STRING_LITERAL
 
 %type <word> word
+%type <word> word_data
 %type <word> word_imm
 %type <word> word_expr
 %type <word> word_expr_imm
@@ -101,6 +102,7 @@ unsigned short internalRS;
 %type <word> byte_primary_imm
 %type <word> byte_value_imm
 %type <word> byte_value_expr_imm
+%type <word> byte_data
 %type <byte> byte
 %type <byte> byte_imm
 %type <byte> zp_byte
@@ -386,10 +388,10 @@ T_DATA:
   ;
 
 T_WORDS:
-  T_WORDS word {
+  T_WORDS word_data {
     currentBank->addWord($2);
   }
-  | T_WORDS T_COMMA word {
+  | T_WORDS T_COMMA word_data {
     currentBank->addWord($3);
   }
   | T_WORDS byte {
@@ -398,7 +400,7 @@ T_WORDS:
   | T_WORDS T_COMMA byte {
     currentBank->addWord($3);
   }
-  | word {
+  | word_data {
     currentBank->addWord($1);
   }
   | byte {
@@ -407,13 +409,13 @@ T_WORDS:
   ;
 
 T_BYTES:
-  T_BYTES byte {
+  T_BYTES byte_data {
     currentBank->addByte($2);
   }
-  | T_BYTES T_COMMA byte {
+  | T_BYTES T_COMMA byte_data {
     currentBank->addByte($3);
   }
-  | byte {
+  | byte_data {
     currentBank->addByte($1);
   }
   ;
@@ -426,6 +428,44 @@ T_FILE:
 
 byte:
   byte_expr { $$ = byte_expr_value($1, "Operand out of range"); }
+  ;
+
+byte_data:
+  byte { $$ = $1; }
+  | T_FORWARD_SYMBOL {
+    localSymbols.addForwardExprByte($1, currentBankNo, currentBank->currentOffset(), line_num, 0);
+    logforwardsymbol($1);
+    $$ = 0xff;
+  }
+  | T_FORWARD_SYMBOL T_PLUS byte_value {
+    localSymbols.addForwardExprByte($1, currentBankNo, currentBank->currentOffset(), line_num, static_cast<short>($3));
+    logforwardsymbol($1);
+    $$ = 0xff;
+  }
+  | T_FORWARD_SYMBOL T_MINUS byte_value {
+    localSymbols.addForwardExprByte($1, currentBankNo, currentBank->currentOffset(), line_num, -static_cast<short>($3));
+    logforwardsymbol($1);
+    $$ = 0xff;
+  }
+  | byte_value T_PLUS T_FORWARD_SYMBOL {
+    localSymbols.addForwardExprByte($3, currentBankNo, currentBank->currentOffset(), line_num, static_cast<short>($1));
+    logforwardsymbol($3);
+    $$ = 0xff;
+  }
+  ;
+
+byte_expr:
+  byte_expr T_PLUS byte_value { $$ = $1 + $3; }
+  | byte_expr T_MINUS byte_value { $$ = $1 - $3; }
+  | byte_primary
+  ;
+
+byte_primary:
+  T_BYTE { $$ = $1; }
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
+  }
   | T_HIGH T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address >> 8);
   }
@@ -445,20 +485,6 @@ byte:
     localSymbols.addForwardLow($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
     logforwardsymbol($3);
     $$ = 0xff;
-  }
-  ;
-
-byte_expr:
-  byte_expr T_PLUS byte_value { $$ = $1 + $3; }
-  | byte_expr T_MINUS byte_value { $$ = $1 - $3; }
-  | byte_primary
-  ;
-
-byte_primary:
-  T_BYTE { $$ = $1; }
-  | T_SYMBOL_BYTE {
-    logsymbol($1);
-    $$ = $1.address;
   }
   | T_OPEN_PAREN byte_value_expr T_CLOSE_PAREN { $$ = $2; }
   ;
@@ -495,6 +521,25 @@ zp_byte:
 
 byte_imm:
   byte_expr_imm { $$ = byte_expr_value($1, "Operand out of range"); }
+  ;
+
+byte_expr_imm:
+  byte_expr_imm T_PLUS byte_value_imm { $$ = $1 + $3; }
+  | byte_expr_imm T_MINUS byte_value_imm { $$ = $1 - $3; }
+  | byte_primary_imm
+  ;
+
+byte_primary_imm:
+  T_BYTE_IMM { $$ = $1; }
+  | T_BYTE { $$ = $1; }
+  | T_SYMBOL_BYTE_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
+  }
   | T_HIGH_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address >> 8);
   }
@@ -514,25 +559,6 @@ byte_imm:
     localSymbols.addForwardLow($3, currentBankNo, currentBank->currentOffset() + 1, line_num);
     logforwardsymbol($3);
     $$ = 0xff;
-  }
-  ;
-
-byte_expr_imm:
-  byte_expr_imm T_PLUS byte_value_imm { $$ = $1 + $3; }
-  | byte_expr_imm T_MINUS byte_value_imm { $$ = $1 - $3; }
-  | byte_primary_imm
-  ;
-
-byte_primary_imm:
-  T_BYTE_IMM { $$ = $1; }
-  | T_BYTE { $$ = $1; }
-  | T_SYMBOL_BYTE_IMM {
-    logsymbol($1);
-    $$ = $1.address;
-  }
-  | T_SYMBOL_BYTE {
-    logsymbol($1);
-    $$ = $1.address;
   }
   | T_OPEN_PAREN byte_value_expr_imm T_CLOSE_PAREN { $$ = $2; }
   ;
@@ -559,6 +585,34 @@ word:
   | T_SYMBOL {
     logsymbol($1);
     $$ = $1.address;
+  }
+  ;
+
+word_data:
+  word_expr { $$ = $1; }
+  | T_SYMBOL {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_FORWARD_SYMBOL {
+    localSymbols.addForwardExprWord($1, currentBankNo, currentBank->currentOffset(), line_num, 0);
+    logforwardsymbol($1);
+    $$ = 0xffff;
+  }
+  | T_FORWARD_SYMBOL T_PLUS word_value {
+    localSymbols.addForwardExprWord($1, currentBankNo, currentBank->currentOffset(), line_num, static_cast<short>($3));
+    logforwardsymbol($1);
+    $$ = 0xffff;
+  }
+  | T_FORWARD_SYMBOL T_MINUS word_value {
+    localSymbols.addForwardExprWord($1, currentBankNo, currentBank->currentOffset(), line_num, -static_cast<short>($3));
+    logforwardsymbol($1);
+    $$ = 0xffff;
+  }
+  | word_value T_PLUS T_FORWARD_SYMBOL {
+    localSymbols.addForwardExprWord($3, currentBankNo, currentBank->currentOffset(), line_num, static_cast<short>($1));
+    logforwardsymbol($3);
+    $$ = 0xffff;
   }
   ;
 

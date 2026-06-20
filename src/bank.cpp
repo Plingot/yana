@@ -127,6 +127,9 @@ bool BankTable::updateForwardSymbols(SymbolTable &symbolTable) {
           case WORD:
             bank->addWord(sym.address);
             break;
+          case WORD_EXPR:
+            bank->addWord(sym.address + forward.exprOffset);
+            break;
 
           case BYTE_HIGH:
             bank->addByte(sym.address >> 8);
@@ -135,6 +138,16 @@ bool BankTable::updateForwardSymbols(SymbolTable &symbolTable) {
           case BYTE_LOW:
             bank->addByte(sym.address & 0xff);
             break;
+          case BYTE_EXPR: {
+            int byteValue = static_cast<int>(sym.address) + forward.exprOffset;
+            if (byteValue < 0 || byteValue > 0xff) {
+              cerr << "error: Operand out of range!" << endl;
+              cerr << "Referenced [" << forward.name << "] at line (" << forward.lineNum << ")." << endl;
+              return false;
+            }
+            bank->addByte(static_cast<unsigned char>(byteValue));
+            break;
+          }
 
           case BYTE_REL: {
             char relative;
