@@ -88,6 +88,9 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 [\)\]]                 { return T_CLOSE_PAREN; }
 \+                     { return T_PLUS; }
 \-                     { return T_MINUS; }
+\|                     { return T_PIPE; }
+\&                     { return T_AMP; }
+>>                     { return T_SHIFT_RIGHT; }
 =                      { return T_EQU; }
 
   /* ines header */

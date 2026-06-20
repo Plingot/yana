@@ -59,6 +59,7 @@ unsigned short internalRS;
 }
 
 %token T_COMMA T_OPEN_PAREN T_CLOSE_PAREN T_PLUS T_MINUS T_HASH_OPEN_PAREN
+%token T_PIPE T_AMP T_SHIFT_RIGHT
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
@@ -111,6 +112,9 @@ unsigned short internalRS;
 %type <byte> bank_header
 %type <byte> bank_no
 
+%left T_PIPE
+%left T_AMP
+%left T_SHIFT_RIGHT
 %left T_PLUS T_MINUS
 
 %%
@@ -457,6 +461,9 @@ byte_data:
 byte_expr:
   byte_expr T_PLUS byte_value { $$ = $1 + $3; }
   | byte_expr T_MINUS byte_value { $$ = $1 - $3; }
+  | byte_expr T_SHIFT_RIGHT byte_value { $$ = $1 >> $3; }
+  | byte_expr T_AMP byte_value { $$ = $1 & $3; }
+  | byte_expr T_PIPE byte_value { $$ = $1 | $3; }
   | byte_primary
   ;
 
@@ -496,6 +503,9 @@ byte_value:
 byte_value_expr:
   byte_value_expr T_PLUS byte_value { $$ = $1 + $3; }
   | byte_value_expr T_MINUS byte_value { $$ = $1 - $3; }
+  | byte_value_expr T_SHIFT_RIGHT byte_value { $$ = $1 >> $3; }
+  | byte_value_expr T_AMP byte_value { $$ = $1 & $3; }
+  | byte_value_expr T_PIPE byte_value { $$ = $1 | $3; }
   | byte_value
   ;
 
@@ -529,6 +539,9 @@ byte_imm:
 byte_expr_imm:
   byte_expr_imm T_PLUS byte_value_imm { $$ = $1 + $3; }
   | byte_expr_imm T_MINUS byte_value_imm { $$ = $1 - $3; }
+  | byte_expr_imm T_SHIFT_RIGHT byte_value_imm { $$ = $1 >> $3; }
+  | byte_expr_imm T_AMP byte_value_imm { $$ = $1 & $3; }
+  | byte_expr_imm T_PIPE byte_value_imm { $$ = $1 | $3; }
   | byte_primary_imm
   ;
 
@@ -579,6 +592,9 @@ byte_value_imm:
 byte_value_expr_imm:
   byte_value_expr_imm T_PLUS byte_value_imm { $$ = $1 + $3; }
   | byte_value_expr_imm T_MINUS byte_value_imm { $$ = $1 - $3; }
+  | byte_value_expr_imm T_SHIFT_RIGHT byte_value_imm { $$ = $1 >> $3; }
+  | byte_value_expr_imm T_AMP byte_value_imm { $$ = $1 & $3; }
+  | byte_value_expr_imm T_PIPE byte_value_imm { $$ = $1 | $3; }
   | byte_value_imm
   ;
 
@@ -644,6 +660,9 @@ word_imm:
 word_expr:
   word_expr T_PLUS word_value { $$ = $1 + $3; }
   | word_expr T_MINUS word_value { $$ = $1 - $3; }
+  | word_expr T_SHIFT_RIGHT word_value { $$ = $1 >> $3; }
+  | word_expr T_AMP word_value { $$ = $1 & $3; }
+  | word_expr T_PIPE word_value { $$ = $1 | $3; }
   | word_primary
   ;
 
@@ -668,12 +687,18 @@ word_value:
 word_value_expr:
   word_value_expr T_PLUS word_value { $$ = $1 + $3; }
   | word_value_expr T_MINUS word_value { $$ = $1 - $3; }
+  | word_value_expr T_SHIFT_RIGHT word_value { $$ = $1 >> $3; }
+  | word_value_expr T_AMP word_value { $$ = $1 & $3; }
+  | word_value_expr T_PIPE word_value { $$ = $1 | $3; }
   | word_value
   ;
 
 word_expr_imm:
   word_expr_imm T_PLUS word_value_imm { $$ = $1 + $3; }
   | word_expr_imm T_MINUS word_value_imm { $$ = $1 - $3; }
+  | word_expr_imm T_SHIFT_RIGHT word_value_imm { $$ = $1 >> $3; }
+  | word_expr_imm T_AMP word_value_imm { $$ = $1 & $3; }
+  | word_expr_imm T_PIPE word_value_imm { $$ = $1 | $3; }
   | word_primary_imm
   ;
 
@@ -708,6 +733,9 @@ word_value_imm:
 word_value_expr_imm:
   word_value_expr_imm T_PLUS word_value_imm { $$ = $1 + $3; }
   | word_value_expr_imm T_MINUS word_value_imm { $$ = $1 - $3; }
+  | word_value_expr_imm T_SHIFT_RIGHT word_value_imm { $$ = $1 >> $3; }
+  | word_value_expr_imm T_AMP word_value_imm { $$ = $1 & $3; }
+  | word_value_expr_imm T_PIPE word_value_imm { $$ = $1 | $3; }
   | word_value_imm
   ;
 
