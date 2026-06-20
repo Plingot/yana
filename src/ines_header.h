@@ -1,7 +1,9 @@
 #ifndef INES_HEADER_H
 #define INES_HEADER_H
 
+#include <algorithm>
 #include <array>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -28,6 +30,7 @@ public:
     addByte(0x53);
     addByte(0x1a);
 
+    trainerData.fill(0);
     _current = data.end();
   };
   ~InesHeader() {};
@@ -142,6 +145,26 @@ public:
     return ((flags6 & 0x4) > 0);
   };
 
+  void setTrainerData(const char *text) {
+    trainerData.fill(0);
+    if (text) {
+      const size_t len = std::min(strlen(text), trainerData.size());
+      std::memcpy(trainerData.data(), text, len);
+    }
+    setTrainer(true);
+  };
+
+  void writeTrainer(std::fstream &file) {
+    if (!trainer()) {
+      return;
+    }
+    file.write(reinterpret_cast<const char *>(trainerData.data()),
+                 trainerData.size());
+    if (!file) {
+      throw std::runtime_error("Failed to write trainer section");
+    }
+  };
+
   void setMirroringNESASM(unsigned char value) {
     /*
     0 = H (Horizontal Mirroring ONLY)
@@ -237,6 +260,7 @@ private:
   unsigned char flags7;
   unsigned char flags9;
   unsigned char flags10;
+  std::array<unsigned char, 512> trainerData;
 };
 
 #endif
