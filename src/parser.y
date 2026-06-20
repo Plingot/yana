@@ -52,7 +52,7 @@ unsigned short internalRS;
   struct symbol sym;
 }
 
-%token T_COMMA T_OPEN_PAREN T_CLOSE_PAREN
+%token T_COMMA T_OPEN_PAREN T_CLOSE_PAREN T_PLUS T_MINUS
 %token T_INES_PRG T_INES_CHR T_INES_MIR T_INES_MAP
 %token T_BANK T_ORG
 %token T_DATA_WORD T_DATA_BYTE
@@ -79,6 +79,14 @@ unsigned short internalRS;
 
 %type <word> word
 %type <word> word_imm
+%type <word> word_expr
+%type <word> word_expr_imm
+%type <word> word_value_expr
+%type <word> word_value_expr_imm
+%type <word> word_primary
+%type <word> word_value
+%type <word> word_primary_imm
+%type <word> word_value_imm
 %type <byte> byte
 %type <byte> byte_imm
 %type <byte> zp_byte
@@ -86,6 +94,8 @@ unsigned short internalRS;
 %type <word> org
 %type <byte> bank_header
 %type <byte> bank_no
+
+%left T_PLUS T_MINUS
 
 %%
 program:
@@ -524,7 +534,7 @@ byte_imm:
   ;
 
 word:
-  T_WORD
+  word_expr
   | T_FORWARD_SYMBOL {
     // If forward_symbol is caught here, it will always have an instruction before it
     // That's why we add 1 to the currentOffset.
@@ -539,7 +549,7 @@ word:
   ;
 
 word_imm:
-  T_WORD_IMM
+  word_expr_imm
   | T_FORWARD_SYMBOL_IMM {
     // If forward_symbol is caught here, it will always have an instruction before it
     // That's why we add 1 to the currentOffset.
@@ -551,6 +561,76 @@ word_imm:
     logsymbol($1);
     $$ = $1.address;
   }
+  ;
+
+word_expr:
+  word_expr T_PLUS word_value { $$ = $1 + $3; }
+  | word_expr T_MINUS word_value { $$ = $1 - $3; }
+  | word_primary
+  ;
+
+word_primary:
+  T_WORD
+  | T_SYMBOL {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_OPEN_PAREN word_value_expr T_CLOSE_PAREN { $$ = $2; }
+  ;
+
+word_value:
+  word_primary
+  | T_BYTE { $$ = $1; }
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  ;
+
+word_value_expr:
+  word_value_expr T_PLUS word_value { $$ = $1 + $3; }
+  | word_value_expr T_MINUS word_value { $$ = $1 - $3; }
+  | word_value
+  ;
+
+word_expr_imm:
+  word_expr_imm T_PLUS word_value_imm { $$ = $1 + $3; }
+  | word_expr_imm T_MINUS word_value_imm { $$ = $1 - $3; }
+  | word_primary_imm
+  ;
+
+word_primary_imm:
+  T_WORD_IMM
+  | T_WORD { $$ = $1; }
+  | T_SYMBOL_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_SYMBOL {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_OPEN_PAREN word_value_expr_imm T_CLOSE_PAREN { $$ = $2; }
+  ;
+
+word_value_imm:
+  word_primary_imm
+  | T_BYTE_IMM { $$ = $1; }
+  | T_BYTE { $$ = $1; }
+  | T_SYMBOL_BYTE_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  ;
+
+word_value_expr_imm:
+  word_value_expr_imm T_PLUS word_value_imm { $$ = $1 + $3; }
+  | word_value_expr_imm T_MINUS word_value_imm { $$ = $1 - $3; }
+  | word_value_imm
   ;
 
 %%

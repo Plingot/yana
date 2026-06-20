@@ -137,3 +137,43 @@ TEST_CASE("branch out of range is rejected", "[integration][negative]") {
 TEST_CASE("missing incbin file is rejected", "[integration][negative]") {
   expect_assembler_failure({"-o", ".yana_test_incbin.nes", "negative/missing_incbin.asm"});
 }
+
+TEST_CASE("word expressions support add/subtract with parentheses",
+          "[integration][assembly]") {
+  const std::string asm_path = std::string(YANA_DATA_DIR) + "/.yana_test_word_expr.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_word_expr.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n\n";
+    output << "base = $1234\n";
+    output << ".dw $100 + 1, base + 1, ($100 + 2) - 1\n";
+    output << "LDA base + ($10 - 1)\n";
+  }
+
+  const ProcessResult result =
+      run_yana({"-o", ".yana_test_word_expr.nes", ".yana_test_word_expr.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 16 + 9);
+  const std::vector<unsigned char> actual(rom.begin() + 16, rom.begin() + 16 + 9);
+  const std::vector<unsigned char> expected = {
+      0x01, 0x01,        // .dw $100 + 1
+      0x35, 0x12,        // .dw base + 1
+      0x01, 0x01,        // .dw ($100 + 2) - 1
+      0xAD, 0x43, 0x12,  // LDA base + ($10 - 1)
+  };
+
+  REQUIRE(actual == expected);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}

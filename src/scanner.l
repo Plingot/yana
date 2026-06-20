@@ -86,6 +86,8 @@ NAME [a-zA-Z_][a-zA-Z0-9_]*
 ,                      { return T_COMMA; }
 [\(\[]                 { return T_OPEN_PAREN; }
 [\)\]]                 { return T_CLOSE_PAREN; }
+\+                     { return T_PLUS; }
+\-                     { return T_MINUS; }
 =                      { return T_EQU; }
 
   /* ines header */
@@ -193,10 +195,28 @@ X                      { return T_X_REGISTER; }
 Y                      { return T_Y_REGISTER; }
 A                      { return T_ACCUMULATOR; }
 
-#\$[a-fA-F0-9]{2}      { /*Byte hex value - immediate */ yylval.byte = strtol(yytext + 2, 0, 16); return T_BYTE_IMM; } ;
-\$[a-fA-F0-9]{2}       { /*Byte hex value */ yylval.byte = strtol(yytext + 1, 0, 16); return T_BYTE; } ;
-#\$[a-fA-F0-9]{4}      { /*Word hex value - immediate */ yylval.word = strtol(yytext + 2, 0, 16); return T_WORD_IMM; } ;
-\$[a-fA-F0-9]{4}       { /*Word hex value */ yylval.word = strtol(yytext + 1, 0, 16); return T_WORD; } ;
+#\$[a-fA-F0-9]{1,4}    {
+  /* Hex immediate value */
+  unsigned short val = strtol(yytext + 2, 0, 16);
+  const size_t digits = strlen(yytext) - 2;
+  if (digits <= 2 && val <= 0xFF) {
+    yylval.byte = (unsigned char)(val & 0xFF);
+    return T_BYTE_IMM;
+  }
+  yylval.word = val;
+  return T_WORD_IMM;
+};
+\$[a-fA-F0-9]{1,4}     {
+  /* Hex value */
+  unsigned short val = strtol(yytext + 1, 0, 16);
+  const size_t digits = strlen(yytext) - 1;
+  if (digits <= 2 && val <= 0xFF) {
+    yylval.byte = (unsigned char)(val & 0xFF);
+    return T_BYTE;
+  }
+  yylval.word = val;
+  return T_WORD;
+};
 #%[01]{8}              { /*Byte immediate binary value */ yylval.byte = strtol(yytext + 2, 0, 2); return T_BYTE_IMM; } ;
 %[01]{8}               { /*Byte binary value */ yylval.byte = strtol(yytext + 1, 0, 2); return T_BYTE; } ;
 [0-9]{1,3}             {
