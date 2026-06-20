@@ -587,3 +587,78 @@ TEST_CASE("inestrainer directive writes 512-byte trainer section after header",
   std::remove(asm_path.c_str());
   std::remove(output_path.c_str());
 }
+
+TEST_CASE("mapper 2 uses 16KB PRG banks and validates bank count",
+          "[integration][assembly][negative]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_mapper2.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_mapper2.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 2\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 2\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n";
+    output << ".db $AA\n";
+    output << ".bank 1\n";
+    output << ".org $C000\n";
+    output << ".db $BB\n";
+  }
+
+  const ProcessResult result =
+      run_yana({"-o", ".yana_test_mapper2.nes", ".yana_test_mapper2.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() == 16 + 16384 + 16384);
+  REQUIRE(static_cast<unsigned char>(rom[16]) == 0xAA);
+  REQUIRE(static_cast<unsigned char>(rom[16 + 16384]) == 0xBB);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}
+
+TEST_CASE("unsupported mapper is rejected", "[integration][negative]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_bad_mapper.asm";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 3\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n";
+    output << "NOP\n";
+  }
+
+  expect_assembler_failure({"-o", ".yana_test_bad_mapper.nes", ".yana_test_bad_mapper.asm"});
+  std::remove(asm_path.c_str());
+}
+
+TEST_CASE("mapper 2 with insufficient PRG banks is rejected", "[integration][negative]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_mapper2_prg.asm";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 2\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n";
+    output << "NOP\n";
+  }
+
+  expect_assembler_failure({"-o", ".yana_test_mapper2_prg.nes", ".yana_test_mapper2_prg.asm"});
+  std::remove(asm_path.c_str());
+}
