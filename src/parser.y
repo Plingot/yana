@@ -23,6 +23,7 @@ void loginstr(const char *s);
 void logsymbol(symbol s);
 void logforwardsymbol(const char *s);
 void yyerror(const char *s);
+unsigned char byte_expr_value(unsigned short value, const char *rangeError);
 
 #define ENCODE_ADDR_MODE(op, mode) \
   do { \
@@ -92,6 +93,14 @@ unsigned short internalRS;
 %type <word> word_value
 %type <word> word_primary_imm
 %type <word> word_value_imm
+%type <word> byte_expr
+%type <word> byte_primary
+%type <word> byte_value
+%type <word> byte_value_expr
+%type <word> byte_expr_imm
+%type <word> byte_primary_imm
+%type <word> byte_value_imm
+%type <word> byte_value_expr_imm
 %type <byte> byte
 %type <byte> byte_imm
 %type <byte> zp_byte
@@ -416,11 +425,7 @@ T_FILE:
   ;
 
 byte:
-  T_BYTE
-  | T_SYMBOL_BYTE {
-    logsymbol($1);
-    $$ = $1.address;
-  }
+  byte_expr { $$ = byte_expr_value($1, "Operand out of range"); }
   | T_HIGH T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address >> 8);
   }
@@ -443,8 +448,36 @@ byte:
   }
   ;
 
+byte_expr:
+  byte_expr T_PLUS byte_value { $$ = $1 + $3; }
+  | byte_expr T_MINUS byte_value { $$ = $1 - $3; }
+  | byte_primary
+  ;
+
+byte_primary:
+  T_BYTE { $$ = $1; }
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_OPEN_PAREN byte_value_expr T_CLOSE_PAREN { $$ = $2; }
+  ;
+
+byte_value:
+  byte_primary
+  ;
+
+byte_value_expr:
+  byte_value_expr T_PLUS byte_value { $$ = $1 + $3; }
+  | byte_value_expr T_MINUS byte_value { $$ = $1 - $3; }
+  | byte_value
+  ;
+
 zp_byte:
   byte
+  | word_expr {
+    $$ = byte_expr_value($1, "Indirect addressing requires a zero page operand");
+  }
   | T_SYMBOL {
     logsymbol($1);
     if ($1.address > 0xff) {
@@ -461,11 +494,7 @@ zp_byte:
   ;
 
 byte_imm:
-  T_BYTE_IMM
-  | T_SYMBOL_BYTE_IMM {
-    logsymbol($1);
-    $$ = $1.address;
-  }
+  byte_expr_imm { $$ = byte_expr_value($1, "Operand out of range"); }
   | T_HIGH_IMM T_OPEN_PAREN T_SYMBOL T_CLOSE_PAREN {
     $$ = ($3.address >> 8);
   }
@@ -486,6 +515,36 @@ byte_imm:
     logforwardsymbol($3);
     $$ = 0xff;
   }
+  ;
+
+byte_expr_imm:
+  byte_expr_imm T_PLUS byte_value_imm { $$ = $1 + $3; }
+  | byte_expr_imm T_MINUS byte_value_imm { $$ = $1 - $3; }
+  | byte_primary_imm
+  ;
+
+byte_primary_imm:
+  T_BYTE_IMM { $$ = $1; }
+  | T_BYTE { $$ = $1; }
+  | T_SYMBOL_BYTE_IMM {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_SYMBOL_BYTE {
+    logsymbol($1);
+    $$ = $1.address;
+  }
+  | T_OPEN_PAREN byte_value_expr_imm T_CLOSE_PAREN { $$ = $2; }
+  ;
+
+byte_value_imm:
+  byte_primary_imm
+  ;
+
+byte_value_expr_imm:
+  byte_value_expr_imm T_PLUS byte_value_imm { $$ = $1 + $3; }
+  | byte_value_expr_imm T_MINUS byte_value_imm { $$ = $1 - $3; }
+  | byte_value_imm
   ;
 
 word:
@@ -617,4 +676,11 @@ void logforwardsymbol(const char *s) {
 
 void yyerror(const char *s) {
   cerr << "Error on line (" << line_num << "): " << s << endl;
+}
+
+unsigned char byte_expr_value(unsigned short value, const char *rangeError) {
+  if (value > 0xff) {
+    throw runtime_error(rangeError);
+  }
+  return value & 0xff;
 }

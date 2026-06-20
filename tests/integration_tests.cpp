@@ -185,3 +185,69 @@ TEST_CASE("invalid addressing mode is rejected", "[integration][negative]") {
 TEST_CASE("immediate value out of range is rejected", "[integration][negative]") {
   expect_assembler_failure({"-o", ".yana_test_immediate.nes", "negative/invalid_immediate.asm"});
 }
+
+TEST_CASE("byte expressions support add/subtract and reject out of range",
+          "[integration][assembly][negative]") {
+  const std::string asm_path = std::string(YANA_DATA_DIR) + "/.yana_test_byte_expr.asm";
+  const std::string output_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_byte_expr.nes";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n\n";
+    output << ".db ($10 + 1), ($20 - 1)\n";
+    output << "LDA #$10 + 1\n";
+    output << "LDA #$ff - 1\n";
+    output << "LDA ($20 + 2), Y\n";
+    output << "LDA ($20 + 3, X)\n";
+  }
+
+  const ProcessResult result =
+      run_yana({"-o", ".yana_test_byte_expr.nes", ".yana_test_byte_expr.asm"});
+  REQUIRE(result.exit_code == 0);
+
+  const std::string rom = read_file(output_path);
+  REQUIRE(rom.size() >= 16 + 10);
+  const std::vector<unsigned char> actual(rom.begin() + 16, rom.begin() + 16 + 10);
+  const std::vector<unsigned char> expected = {
+      0x11, 0x1f,  // .db ($10 + 1), ($20 - 1)
+      0xa9, 0x11,  // LDA #($10 + 1)
+      0xa9, 0xfe,  // LDA #($ff - 1)
+      0xb1, 0x22,  // LDA ($20 + 2), Y
+      0xa1, 0x23,  // LDA ($20 + 3, X)
+  };
+  REQUIRE(actual == expected);
+
+  std::remove(asm_path.c_str());
+  std::remove(output_path.c_str());
+}
+
+TEST_CASE("byte expression out of range is rejected", "[integration][negative]") {
+  const std::string asm_path =
+      std::string(YANA_DATA_DIR) + "/.yana_test_byte_expr_range.asm";
+
+  {
+    std::ofstream output(asm_path);
+    REQUIRE(output.is_open());
+    output << ".inesprg 1\n";
+    output << ".ineschr 0\n";
+    output << ".inesmap 0\n";
+    output << ".inesmir 1\n\n";
+    output << ".bank 0\n";
+    output << ".org $8000\n\n";
+    output << "LDA #$ff + 1\n";
+  }
+
+  const ProcessResult result = run_yana(
+      {"-o", ".yana_test_byte_expr_range.nes", ".yana_test_byte_expr_range.asm"});
+  REQUIRE(result.exit_code != 0);
+
+  std::remove(asm_path.c_str());
+  std::remove((std::string(YANA_DATA_DIR) + "/.yana_test_byte_expr_range.nes").c_str());
+}
